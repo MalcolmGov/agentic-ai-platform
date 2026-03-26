@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const successMessage = searchParams.get("registered") === "true"
+    ? "Account created successfully. Please sign in."
+    : null;
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -26,23 +32,31 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.error || "Login failed");
+        setError(data.error || "Invalid email or password");
         setLoading(false);
         return;
       }
 
-      // Store token for API calls
+      // Cookie is set by the server (httpOnly), also store for client-side API calls
       localStorage.setItem("auth_token", data.data.token);
-      router.push("/dashboard");
+
+      const redirect = searchParams.get("redirect") || "/dashboard";
+      router.push(redirect);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
     }
   }
 
+  function handleDemo() {
+    setDemoLoading(true);
+    // The demo endpoint is a GET that sets cookies and redirects
+    window.location.href = "/api/demo";
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background */}
+      {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-electric-500/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl" />
@@ -59,6 +73,13 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-text-primary">Welcome Back</h1>
           <p className="text-text-secondary mt-1 text-sm">Sign in to your Agentic AI Platform</p>
         </div>
+
+        {/* Success message (from registration) */}
+        {successMessage && (
+          <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm text-center">
+            {successMessage}
+          </div>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="glass-card p-8 space-y-5">
@@ -87,7 +108,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input-field"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               required
             />
           </div>
@@ -100,6 +121,21 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
 
+          <div className="relative flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-text-muted">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDemo}
+            disabled={demoLoading}
+            className="btn-secondary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {demoLoading ? "Loading demo..." : "Try Demo"}
+          </button>
+
           <div className="text-center text-sm text-text-muted">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="text-electric-400 hover:text-electric-300 font-medium">
@@ -108,7 +144,7 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* Demo credentials */}
+        {/* Demo credentials hint */}
         <div className="mt-6 glass-card p-4 text-center">
           <div className="text-xs text-text-muted mb-1">Demo Credentials</div>
           <div className="text-sm text-text-secondary font-mono">admin@acme.com / admin123456</div>

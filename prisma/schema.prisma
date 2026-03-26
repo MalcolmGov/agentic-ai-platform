@@ -15,39 +15,57 @@ datasource db {
 // ─────────────────────────────────────────────
 
 model Tenant {
-  id            String         @id @default(cuid())
-  name          String
-  slug          String         @unique
-  industry      String?
-  plan          PlanType       @default(STARTER)
-  status        TenantStatus   @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id        String       @id @default(cuid())
+  name      String
+  slug      String       @unique
+  industry  String?
+  plan      PlanType     @default(STARTER)
+  status    TenantStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
-  users         User[]
-  agents        Agent[]
-  workflows     Workflow[]
-  integrations  Integration[]
-  apiKeys       ApiKey[]
-  auditLogs     AuditLog[]
-  alerts        Alert[]
-  subscription  Subscription?
+  users        User[]
+  agents       Agent[]
+  workflows    Workflow[]
+  integrations Integration[]
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[]
+  alerts       Alert[]
+  subscription Subscription?
+
+  // Extended feature relations
+  governanceModelCards  GovernanceModelCard[]
+  governanceDecisions   GovernanceDecision[]
+  complianceReports     ComplianceReport[]
+  driftBaselines        DriftBaseline[]
+  driftEvents           DriftEvent[]
+  marketplaceListings   MarketplaceListing[]   @relation("MarketplaceListings")
+  marketplaceReviews    MarketplaceReview[]
+  marketplaceInstalls   MarketplaceInstall[]
+  orchestratedWorkflows OrchestratedWorkflow[]
+  promptVersions        PromptVersion[]
+  webhookSubscriptions  WebhookSubscription[]
+  teamInvites           TeamInvite[]
+  notifications         Notification[]
+  ssoConfig             SSOConfig?
+  whiteLabelConfig      WhiteLabelConfig?
+  onboardingProgress    OnboardingProgress?
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  name          String
-  passwordHash  String
-  role          UserRole   @default(VIEWER)
-  avatarUrl     String?
-  lastActiveAt  DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         UserRole  @default(VIEWER)
+  avatarUrl    String?
+  lastActiveAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  tenantId      String
-  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  auditLogs     AuditLog[]
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
 
   @@index([tenantId])
 }
@@ -57,42 +75,49 @@ model User {
 // ─────────────────────────────────────────────
 
 model Agent {
-  id            String         @id @default(cuid())
-  name          String
-  type          AgentType
-  description   String?
-  systemPrompt  String?        @db.Text
-  config        Json           @default("{}")
-  llmProvider   String         @default("openai")
-  llmModel      String         @default("gpt-4o")
-  status        AgentStatus    @default(INACTIVE)
-  schedule      String?        // cron expression or "realtime"
-  tools         String[]       // list of tool IDs this agent can use
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id           String      @id @default(cuid())
+  name         String
+  type         AgentType
+  description  String?
+  systemPrompt String?     @db.Text
+  config       Json        @default("{}")
+  llmProvider  String      @default("openai")
+  llmModel     String      @default("gpt-4o")
+  status       AgentStatus @default(INACTIVE)
+  schedule     String? // cron expression or "realtime"
+  tools        String[] // list of tool IDs this agent can use
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  tenantId      String
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  executions    AgentExecution[]
+  tenantId   String
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  executions AgentExecution[]
+
+  // Extended feature relations
+  governanceModelCards GovernanceModelCard[]
+  governanceDecisions  GovernanceDecision[]
+  driftBaselines       DriftBaseline[]
+  driftEvents          DriftEvent[]
+  promptVersions       PromptVersion[]
 
   @@index([tenantId])
   @@index([type])
 }
 
 model AgentExecution {
-  id            String           @id @default(cuid())
-  status        ExecutionStatus  @default(PENDING)
-  input         Json?
-  output        Json?
-  error         String?          @db.Text
-  durationMs    Int?
-  tokenUsage    Int?
-  costUsd       Float?
-  startedAt     DateTime         @default(now())
-  completedAt   DateTime?
+  id          String          @id @default(cuid())
+  status      ExecutionStatus @default(PENDING)
+  input       Json?
+  output      Json?
+  error       String?         @db.Text
+  durationMs  Int?
+  tokenUsage  Int?
+  costUsd     Float?
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
 
-  agentId       String
-  agent         Agent            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
   @@index([startedAt])
@@ -103,34 +128,34 @@ model AgentExecution {
 // ─────────────────────────────────────────────
 
 model Workflow {
-  id            String           @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
   description   String?
-  triggerType   TriggerType      @default(MANUAL)
-  triggerConfig Json             @default("{}")
-  status        WorkflowStatus   @default(DRAFT)
+  triggerType   TriggerType    @default(MANUAL)
+  triggerConfig Json           @default("{}")
+  status        WorkflowStatus @default(DRAFT)
   category      String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  tenantId      String
-  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  steps         WorkflowStep[]
+  tenantId String
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  steps    WorkflowStep[]
 
   @@index([tenantId])
 }
 
 model WorkflowStep {
-  id            String       @id @default(cuid())
-  order         Int
-  name          String
-  type          StepType
-  config        Json         @default("{}")
-  agentId       String?      // optional: which agent runs this step
-  createdAt     DateTime     @default(now())
+  id        String   @id @default(cuid())
+  order     Int
+  name      String
+  type      StepType
+  config    Json     @default("{}")
+  agentId   String? // optional: which agent runs this step
+  createdAt DateTime @default(now())
 
-  workflowId    String
-  workflow      Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@index([workflowId])
 }
@@ -140,18 +165,18 @@ model WorkflowStep {
 // ─────────────────────────────────────────────
 
 model Integration {
-  id              String            @id @default(cuid())
-  name            String
-  type            IntegrationType
-  provider        String            // e.g., "stripe", "slack", "postgresql"
-  config          Json              @default("{}")   // encrypted connection details
-  status          IntegrationStatus @default(DISCONNECTED)
-  lastSyncAt      DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id         String            @id @default(cuid())
+  name       String
+  type       IntegrationType
+  provider   String // e.g., "stripe", "slack", "postgresql"
+  config     Json              @default("{}") // encrypted connection details
+  status     IntegrationStatus @default(DISCONNECTED)
+  lastSyncAt DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
-  tenantId        String
-  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
 }
@@ -161,35 +186,35 @@ model Integration {
 // ─────────────────────────────────────────────
 
 model ApiKey {
-  id            String       @id @default(cuid())
-  name          String
-  keyHash       String       @unique    // hashed key
-  prefix        String                   // first 8 chars for identification
-  status        ApiKeyStatus @default(ACTIVE)
-  lastUsedAt    DateTime?
-  expiresAt     DateTime?
-  createdAt     DateTime     @default(now())
+  id         String       @id @default(cuid())
+  name       String
+  keyHash    String       @unique // hashed key
+  prefix     String // first 8 chars for identification
+  status     ApiKeyStatus @default(ACTIVE)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime     @default(now())
 
-  tenantId      String
-  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([keyHash])
 }
 
 model AuditLog {
-  id            String     @id @default(cuid())
-  action        String     // e.g., "agent.execute", "workflow.trigger"
-  resource      String     // what was acted upon
-  details       Json?
-  ipAddress     String?
-  userAgent     String?
-  createdAt     DateTime   @default(now())
+  id        String   @id @default(cuid())
+  action    String // e.g., "agent.execute", "workflow.trigger"
+  resource  String // what was acted upon
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
-  tenantId      String
-  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId        String?
-  user          User?      @relation(fields: [userId], references: [id])
+  tenantId String
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id])
 
   @@index([tenantId])
   @@index([createdAt])
@@ -197,32 +222,32 @@ model AuditLog {
 }
 
 model Subscription {
-  id            String     @id @default(cuid())
-  plan          PlanType   @default(STARTER)
-  status        SubStatus  @default(ACTIVE)
+  id                 String    @id @default(cuid())
+  plan               PlanType  @default(STARTER)
+  status             SubStatus @default(ACTIVE)
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
-  agentLimit    Int        @default(3)
-  executionLimit Int       @default(10000)
-  priceMonthly  Float
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  agentLimit         Int       @default(3)
+  executionLimit     Int       @default(10000)
+  priceMonthly       Float
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  tenantId      String     @unique
-  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Alert {
-  id            String       @id @default(cuid())
-  severity      Severity     @default(INFO)
-  title         String
-  description   String?      @db.Text
-  source        String       // which agent/system generated it
-  acknowledged  Boolean      @default(false)
-  createdAt     DateTime     @default(now())
+  id           String   @id @default(cuid())
+  severity     Severity @default(INFO)
+  title        String
+  description  String?  @db.Text
+  source       String // which agent/system generated it
+  acknowledged Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
-  tenantId      String
-  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([severity])
@@ -340,4 +365,335 @@ enum Severity {
   INFO
   WARNING
   CRITICAL
+}
+
+// ─────────────────────────────────────────────
+// Governance & Compliance
+// ─────────────────────────────────────────────
+
+model GovernanceModelCard {
+  id              String   @id @default(cuid())
+  agentId         String
+  agent           Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  modelType       String
+  version         String
+  biasAssessment  Json     @default("{}")
+  fairnessMetrics Json     @default("{}")
+  dataSources     Json     @default("[]")
+  limitations     String[]
+  approvedBy      String?
+  status          String   @default("draft") // draft, pending_review, approved, rejected
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+}
+
+model GovernanceDecision {
+  id         String   @id @default(cuid())
+  agentId    String
+  agent      Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  decision   String
+  rationale  String   @db.Text
+  impact     String
+  decidedBy  String
+  reviewedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+}
+
+model ComplianceReport {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  framework  String
+  findings   Json     @default("[]")
+  riskLevel  String   @default("low") // low, medium, high, critical
+  periodDays Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([framework])
+}
+
+// ─────────────────────────────────────────────
+// Drift Detection
+// ─────────────────────────────────────────────
+
+model DriftBaseline {
+  id            String   @id @default(cuid())
+  agentId       String
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  metric        String
+  baselineValue Float
+  threshold     Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+}
+
+model DriftEvent {
+  id            String   @id @default(cuid())
+  agentId       String
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  metric        String
+  baselineValue Float
+  currentValue  Float
+  deviation     Float
+  severity      String   @default("info") // info, warning, critical
+  acknowledged  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+  @@index([severity])
+}
+
+// ─────────────────────────────────────────────
+// Marketplace
+// ─────────────────────────────────────────────
+
+model MarketplaceListing {
+  id             String               @id @default(cuid())
+  name           String
+  description    String               @db.Text
+  category       String
+  tags           String[]
+  authorTenantId String
+  authorTenant   Tenant               @relation("MarketplaceListings", fields: [authorTenantId], references: [id], onDelete: Cascade)
+  version        String
+  pricing        Json                 @default("{}")
+  rating         Float                @default(0)
+  installCount   Int                  @default(0)
+  status         String               @default("draft") // draft, pending_review, published, suspended
+  config         Json                 @default("{}")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  reviews        MarketplaceReview[]
+  installs       MarketplaceInstall[]
+
+  @@index([authorTenantId])
+  @@index([category])
+  @@index([status])
+}
+
+model MarketplaceReview {
+  id        String             @id @default(cuid())
+  listingId String
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String             @db.Text
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([listingId])
+  @@index([tenantId])
+}
+
+model MarketplaceInstall {
+  id        String             @id @default(cuid())
+  listingId String
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([listingId])
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// Orchestrated Workflows
+// ─────────────────────────────────────────────
+
+model OrchestratedWorkflow {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?   @db.Text
+  nodes       Json      @default("[]")
+  edges       Json      @default("[]")
+  status      String    @default("draft") // draft, running, completed, failed, paused, cancelled
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Prompt Versioning
+// ─────────────────────────────────────────────
+
+model PromptVersion {
+  id            String   @id @default(cuid())
+  agentId       String
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  version       Int
+  content       String   @db.Text
+  message       String
+  author        String
+  branch        String   @default("main")
+  tags          String[]
+  parentVersion Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+  @@index([agentId, version])
+}
+
+// ─────────────────────────────────────────────
+// Webhooks
+// ─────────────────────────────────────────────
+
+model WebhookSubscription {
+  id         String            @id @default(cuid())
+  tenantId   String
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  url        String
+  secret     String
+  events     String[]
+  active     Boolean           @default(true)
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  deliveries WebhookDelivery[]
+
+  @@index([tenantId])
+}
+
+model WebhookDelivery {
+  id             String              @id @default(cuid())
+  subscriptionId String
+  subscription   WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  event          String
+  payload        Json
+  status         String              @default("pending") // pending, delivered, failed, retrying
+  attempts       Int                 @default(0)
+  lastAttemptAt  DateTime?
+  responseCode   Int?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Team Invites
+// ─────────────────────────────────────────────
+
+model TeamInvite {
+  id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email      String
+  role       String
+  token      String    @unique
+  invitedBy  String
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+// ─────────────────────────────────────────────
+// Notifications
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String
+  category  String
+  title     String
+  message   String    @db.Text
+  channels  String[]
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([read])
+}
+
+// ─────────────────────────────────────────────
+// SSO Configuration
+// ─────────────────────────────────────────────
+
+model SSOConfig {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider       String
+  protocol       String // SAML, OIDC
+  config         Json     @default("{}")
+  active         Boolean  @default(false)
+  allowedDomains String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// White-Label Configuration
+// ─────────────────────────────────────────────
+
+model WhiteLabelConfig {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  theme          Json     @default("{}")
+  customDomain   String?
+  domainVerified Boolean  @default(false)
+  emailBranding  Json?
+  loginPage      Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// Onboarding Progress
+// ─────────────────────────────────────────────
+
+model OnboardingProgress {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  completedSteps String[]
+  currentStep    String
+  startedAt      DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
