@@ -86,7 +86,7 @@ function getPlatformData() {
   };
 }
 
-async function resolveToolCall(fnName: string): Promise<string> {
+async function resolveToolCall(fnName: string, args?: string): Promise<string> {
   const d = getPlatformData();
   switch (fnName) {
     case "get_platform_overview":
@@ -101,6 +101,100 @@ async function resolveToolCall(fnName: string): Promise<string> {
       return JSON.stringify(d.workflows);
     case "get_security_posture":
       return JSON.stringify(d.security);
+
+    case "get_feature_details": {
+      const parsed = args ? JSON.parse(args) : {};
+      const name = (parsed.feature_name || "").toLowerCase();
+      const features: Record<string, object> = {
+        "agent studio": { route: "/dashboard/studio", status: "active", nodeTypes: 6, templates: 3, description: "Drag-and-drop visual agent builder with canvas, node palette, and config panel. Templates: Fraud Detection, Customer Onboarding, Daily Report." },
+        "glass box": { route: "/dashboard/glass-box", status: "active", phases: 6, description: "Full reasoning replay — 6-phase timeline (Observe/Retrieve/Reason/Plan/Execute/Evaluate) with LLM prompts, confidence scores, and compliance PDF export." },
+        "copilot": { route: "/dashboard/copilot", status: "active", commands: 6, description: "Natural language control plane — type commands like 'Deploy a fraud agent' and it executes. 6 quick commands available." },
+        "multi-agent": { route: "/dashboard/collaboration", status: "active", sessions: 2, messageTypes: 5, description: "Autonomous agent coordination — agents delegate, share findings, and solve problems together. 5 message types: REQUEST, RESPONSE, DELEGATE, BROADCAST, RESULT." },
+        "marketplace": { route: "/dashboard/marketplace", status: "active", agents: 12, categories: 6, revenueShare: "70/30", description: "Shopify-style app store for AI agents. 12 listings, 6 categories, one-click install, ratings and reviews." },
+        "crystal ball": { route: "/dashboard/crystal-ball", status: "active", predictions: 6, criticalAlerts: 1, description: "AI-powered predictions. 6 active predictions including fraud ring activation (87% confidence) and transaction volume surge (91% confidence)." },
+        "voice": { route: "/dashboard/voice", status: "active", intents: 6, description: "Voice interface for hands-free agent management with mic, audio visualizer, and quick voice commands." },
+        "approvals": { route: "/dashboard/approvals", status: "active", pending: 5, description: "Human-in-the-loop approval gates. 5 pending high-impact actions requiring human review before execution." },
+        "ab testing": { route: "/dashboard/experiments", status: "active", experiments: 3, description: "Agent A/B testing with statistical significance analysis. Currently comparing GPT-4o vs Claude 3.5 for FraudGuard." },
+        "scaling": { route: "/dashboard/scaling", status: "active", workers: 7, queues: 5, description: "BullMQ infrastructure dashboard with 7 workers, 5 queues, CPU/memory monitoring, and auto-scale controls." },
+        "sso": { route: "/dashboard/settings/sso", status: "active", providers: 4, connectedProvider: "Okta (247 users)", description: "SSO/SAML enterprise authentication with Okta, Azure AD, Google Workspace, OneLogin support." },
+        "billing": { route: "/dashboard/settings/billing", status: "active", currentPlan: "Enterprise $499/mo", description: "Stripe billing dashboard with 3-tier plans, 6 usage metrics, and invoice history." },
+        "integrations": { route: "/dashboard/settings/integrations", status: "active", total: 10, connected: 3, description: "Integrations hub — 10 services across 5 categories. Connected: Slack, Datadog, AWS S3." },
+      };
+      const key = Object.keys(features).find(k => name.includes(k)) || "";
+      return JSON.stringify(features[key] || { error: "Feature not found. Available: agent studio, glass box, copilot, multi-agent, marketplace, crystal ball, voice, approvals, ab testing, scaling, sso, billing, integrations" });
+    }
+
+    case "get_predictions":
+      return JSON.stringify([
+        { title: "Fraud Ring Activation", severity: "critical", confidence: "87%", timeframe: "Next 24 hours", impact: "CRITICAL", accounts: 42, recommendation: "Preemptively freeze 42 linked accounts" },
+        { title: "Transaction Volume Surge", severity: "warning", confidence: "91%", timeframe: "Next 48 hours", impact: "HIGH", predictedSpike: "340% above baseline", recommendation: "Scale workers to 5x before Thursday" },
+        { title: "API Rate Limit Breach", severity: "warning", confidence: "84%", timeframe: "Next 12 hours", topConsumer: "FinanceApp (67% of quota)", recommendation: "Contact FinanceApp about usage optimization" },
+        { title: "Compliance Deadline Risk", severity: "warning", confidence: "78%", pendingKYC: 47, willMissDeadline: 11, recommendation: "Increase ComplianceBot batch size to 25/day" },
+        { title: "Customer Churn Signal", severity: "opportunity", confidence: "82%", atRiskCustomers: 3, recommendation: "Trigger proactive outreach via SupportBot" },
+        { title: "Cost Optimization", severity: "opportunity", confidence: "94%", monthlySaving: "$1,240", recommendation: "Enable automatic model routing to gpt-4o-mini for simple tasks" },
+      ]);
+
+    case "get_pending_approvals":
+      return JSON.stringify([
+        { agent: "FraudGuard", action: "Freeze 14 linked accounts", risk: "critical", totalBalance: "$847,200", evidence: "89% mule ring match", timestamp: "2 min ago" },
+        { agent: "ComplianceBot", action: "Submit SAR filing to FinCEN", risk: "high", subject: "ACC-4821", amount: "$127,450", timestamp: "15 min ago" },
+        { agent: "ReportGen", action: "Send executive report to board", risk: "medium", recipients: 8, timestamp: "1 hour ago" },
+        { agent: "DataMiner", action: "Delete 2,340 stale customer records", risk: "high", policy: "GDPR Art. 5(1)(e)", timestamp: "3 hours ago" },
+        { agent: "FraudGuard", action: "Block IP range 196.21.0.0/16", risk: "high", fraudAttempts: 47, legitimateUsers: "~12,000", timestamp: "5 hours ago" },
+      ]);
+
+    case "get_experiments":
+      return JSON.stringify([
+        { name: "FraudGuard Model Comparison", status: "running", variantA: "GPT-4o (97.8% success, 1450ms)", variantB: "Claude 3.5 (98.4% success, 1180ms, winning)", totalSamples: 2500 },
+        { name: "ComplianceBot Prompt Optimization", status: "complete", winner: "Optimized Prompt (98.1% vs 95.2%)", improvement: "+2.9% success rate" },
+        { name: "SupportBot Temperature Tuning", status: "draft", variants: "Temperature 0.3 vs 0.7" },
+      ]);
+
+    case "get_infrastructure_status":
+      return JSON.stringify({
+        workers: 7, queues: 5, totalProcessed: "41.3K", totalFailed: 108, successRate: "99.74%", autoScaleEnabled: true,
+        queues_detail: [
+          { name: "fraud-detection", waiting: 12, active: 4, throughput: "142/h", workers: 2 },
+          { name: "compliance", waiting: 47, active: 1, throughput: "12/h", workers: 1 },
+          { name: "default", waiting: 5, active: 8, throughput: "234/h", workers: 2 },
+          { name: "reports", waiting: 0, active: 0, throughput: "3/h", workers: 1 },
+          { name: "email", waiting: 156, active: 0, throughput: "45/h", workers: 1, alert: "High queue depth — consider adding worker" },
+        ],
+      });
+
+    case "get_marketplace_catalog":
+      return JSON.stringify({
+        totalAgents: 12, categories: 6,
+        featured: [
+          { name: "FraudShield Pro", price: "$299/mo", rating: 4.9, installs: "12.4K", author: "Acme Security" },
+          { name: "KYC AutoVerify", price: "$199/mo", rating: 4.8, installs: "8.9K", author: "CompliTech" },
+          { name: "DocAnalyzer", price: "$179/mo", rating: 4.8, installs: "9.1K", author: "PaperAI" },
+        ],
+        free: ["EmailCraft Pro", "SlackOps Bot", "ScheduleOptimizer"],
+        categories_list: ["Fraud & Risk", "Compliance", "Customer Support", "Data Analysis", "Automation", "Reporting"],
+      });
+
+    case "get_integration_status":
+      return JSON.stringify({
+        connected: [
+          { name: "Slack", workspace: "acme-corp.slack.com", channel: "#agent-ops", features: ["Alert notifications", "Agent commands", "Approval workflows"] },
+          { name: "Datadog", region: "US1", environment: "production", features: ["APM integration", "Custom metrics", "Log forwarding"] },
+          { name: "AWS S3", bucket: "acme-agentic-prod", region: "us-east-1", features: ["Report storage", "Log archival", "Data export"] },
+        ],
+        available: ["Microsoft Teams", "Salesforce", "HubSpot", "PagerDuty", "GitHub", "Jira", "Twilio"],
+      });
+
+    case "get_billing_info":
+      return JSON.stringify({
+        currentPlan: "Enterprise", price: "$499/month", status: "Active", nextBilling: "April 1, 2026",
+        usage: { agents: 12, executions: "47.8K", llmTokens: "2.8M", storage: "12.4 GB", apiCalls: "156K", teamMembers: 24 },
+        recentInvoices: [
+          { id: "INV-2026-003", period: "Mar 2026", amount: "$499", status: "paid" },
+          { id: "INV-2026-002", period: "Feb 2026", amount: "$499", status: "paid" },
+        ],
+        plans: ["Starter (Free)", "Pro ($99/mo)", "Enterprise ($499/mo)"],
+      });
+
     default:
       return JSON.stringify({ error: `Unknown function: ${fnName}` });
   }
@@ -244,7 +338,7 @@ export default function AgenticVoiceCoPilot() {
           const call = pendingRef.current.get(ev.call_id as string);
           if (call) {
             const cid = ev.call_id as string;
-            resolveToolCall(call.name).then(result => {
+            resolveToolCall(call.name, call.args).then(result => {
               if (dcRef.current?.readyState === "open") {
                 dcRef.current.send(JSON.stringify({ type: "conversation.item.create", item: { type: "function_call_output", call_id: cid, output: result } }));
                 dcRef.current.send(JSON.stringify({ type: "response.create" }));
