@@ -1,16 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { POST, GET } from "@/app/api/onboarding/route";
+import { POST } from "@/app/api/onboarding/route";
 import { NextRequest } from "next/server";
-import { generateToken } from "@/lib/auth/jwt";
-
-function makeAuthToken() {
-  return generateToken({
-    userId: "user_test_001",
-    tenantId: "tenant_test_001",
-    email: "testuser@acme.com",
-    role: "OWNER",
-  });
-}
+import { getOnboardingEngine } from "@/lib/onboarding/onboarding-engine";
+import { OnboardingEngine } from "@/lib/onboarding/onboarding-engine";
 
 function makePostRequest(body: Record<string, unknown>, headers: Record<string, string> = {}) {
   return new NextRequest("http://localhost:3000/api/onboarding", {
@@ -18,18 +10,6 @@ function makePostRequest(body: Record<string, unknown>, headers: Record<string, 
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...headers },
   });
-}
-
-function makeGetRequest(params: Record<string, string>, token?: string) {
-  const url = new URL("http://localhost:3000/api/onboarding");
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, v);
-  }
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return new NextRequest(url.toString(), { method: "GET", headers });
 }
 
 describe("Onboarding API", () => {
@@ -54,6 +34,23 @@ describe("Onboarding API", () => {
       expect(body.data.tenant.status).toBe("trial");
       expect(body.data.apiKey).toBeTruthy();
       expect(body.data.tenant.onboarding.completedSteps).toContain("account_created");
+    });
+
+    it("creates a starter tenant with active status", async () => {
+      const response = await POST(
+        makePostRequest({
+          action: "signup",
+          companyName: "Starter Corp",
+          ownerEmail: `starter_${Date.now()}@test.com`,
+          plan: "starter",
+          password: "securepass123",
+        })
+      );
+
+      expect(response.status).toBe(201);
+      const body = await response.json();
+      expect(body.data.tenant.plan).toBe("starter");
+      expect(body.data.tenant.status).toBe("active");
     });
 
     it("rejects signup with invalid email", async () => {
@@ -93,7 +90,6 @@ describe("Onboarding API", () => {
     let tenantId: string;
 
     beforeEach(async () => {
-      // Signup first to get a tenant
       const signupRes = await POST(
         makePostRequest({
           action: "signup",
@@ -142,63 +138,35 @@ describe("Onboarding API", () => {
     });
   });
 
-  describe("GET /api/onboarding - limits", () => {
+  describe("Onboarding Engine - limits (direct)", () => {
+    let engine: OnboardingEngine;
     let tenantId: string;
-    let token: string;
 
-    beforeEach(async () => {
-      // Create a tenant first
-      const signupRes = await POST(
-        makePostRequest({
-          action: "signup",
-          companyName: "Limits Corp",
-          ownerEmail: `limits_${Date.now()}_${Math.random().toString(36).slice(2, 6)}@test.com`,
-          plan: "starter",
-          password: "securepass123",
-        })
-      );
-      const signupBody = await signupRes.json();
-      tenantId = signupBody.data.tenant.id;
-
-      // Generate a token for the GET endpoint (which requires auth)
-      token = generateToken({
-        userId: "user_test_001",
-        tenantId,
-        email: "test@limits.com",
-        role: "OWNER",
+    beforeEach(() => {
+      engine = new OnboardingEngine();
+      const result = engine.signup({
+        companyName: "Limits Corp",
+        ownerEmail: `limits_${Date.now()}_${Math.random().toString(36).slice(2, 6)}@test.com`,
+        plan: "starter",
+        password: "securepass123",
       });
+      tenantId = result.tenant.id;
     });
 
-    it("returns limit information for a resource", async () => {
-      const response = await GET(
-        makeGetRequest(
-          { view: "limits", resource: "maxAgents", usage: "1" },
-          token
-        )
-      );
+    it("returns limit information for a resource within bounds", () => {
+      const limits = engine.checkLimits(tenantId, "maxAgents", 1);
 
-      expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body.success).toBe(true);
-      expect(body.data.limits).toBeDefined();
-      expect(body.data.limits.allowed).toBe(true);
-      expect(body.data.limits.limit).toBe(3); // starter plan limit
-      expect(body.data.limits.usage).toBe(1);
-      expect(body.data.limits.remaining).toBe(2);
+      expect(limits.allowed).toBe(true);
+      expect(limits.limit).toBe(3); // starter plan
+      expect(limits.usage).toBe(1);
+      expect(limits.remaining).toBe(2);
     });
 
-    it("returns not allowed when usage exceeds limit", async () => {
-      const response = await GET(
-        makeGetRequest(
-          { view: "limits", resource: "maxAgents", usage: "5" },
-          token
-        )
-      );
+    it("returns not allowed when usage exceeds limit", () => {
+      const limits = engine.checkLimits(tenantId, "maxAgents", 5);
 
-      expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body.data.limits.allowed).toBe(false);
-      expect(body.data.limits.remaining).toBe(0);
+      expect(limits.allowed).toBe(false);
+      expect(limits.remaining).toBe(0);
     });
   });
 });

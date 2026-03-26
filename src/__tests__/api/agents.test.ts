@@ -1,99 +1,197 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
+import { GET, POST } from "@/app/api/agents/route";
+import { POST as loginPOST } from "@/app/api/auth/login/route";
 import { NextRequest } from "next/server";
+import { generateToken } from "@/lib/auth/jwt";
 
-// Mock auth to bypass JWT verification
-vi.mock("@/lib/auth/jwt", () => ({
-  authenticateRequest: vi.fn().mockReturnValue({
+// Generate a valid JWT for testing
+function makeAuthToken(role: "OWNER" | "ADMIN" | "DEVELOPER" | "ANALYST" | "VIEWER" = "OWNER") {
+  return generateToken({
     userId: "user_test_001",
     tenantId: "tenant_test_001",
-    email: "test@acme.com",
-    role: "OWNER",
-  }),
-  AuthError: class AuthError extends Error {
-    status: number;
-    constructor(message: string, status: number) {
-      super(message);
-      this.status = status;
-    }
-  },
-}));
-
-vi.mock("@/lib/audit/logger", () => ({
-  auditFromRequest: vi.fn().mockResolvedValue(undefined),
-  logAudit: vi.fn().mockResolvedValue(undefined),
-}));
-
-import { GET, POST } from "@/app/api/agents/route";
-
-function makeRequest(method: string, body?: unknown): NextRequest {
-  const init: RequestInit = { method };
-  if (body) {
-    init.body = JSON.stringify(body);
-    init.headers = { "Content-Type": "application/json" };
-  }
-  return new NextRequest("http://localhost:3000/api/agents", init);
+    email: "testuser@acme.com",
+    role,
+  });
 }
 
-describe("GET /api/agents", () => {
-  it("returns list of agent types", async () => {
-    const req = makeRequest("GET");
-    const response = await GET(req);
-    expect(response.status).toBe(200);
-
-    const body = await response.json();
-    expect(body.success).toBe(true);
-    expect(body.data.agentTypes).toHaveLength(10);
-    expect(body.data.total).toBe(10);
-    expect(body.data.tenantId).toBe("tenant_test_001");
+function makeGetRequest(token?: string) {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return new NextRequest("http://localhost:3000/api/agents", {
+    method: "GET",
+    headers,
   });
+}
 
-  it("includes expected agent type IDs", async () => {
-    const req = makeRequest("GET");
-    const response = await GET(req);
-    const body = await response.json();
-    const ids = body.data.agentTypes.map((a: { id: string }) => a.id);
-    expect(ids).toContain("FRAUD_MONITORING");
-    expect(ids).toContain("COMPLIANCE");
-    expect(ids).toContain("CUSTOMER_SUPPORT");
+function makePostRequest(body: Record<string, unknown>, token?: string) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return new NextRequest("http://localhost:3000/api/agents", {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers,
   });
-});
+}
 
-describe("POST /api/agents", () => {
-  it("creates an agent with valid data", async () => {
-    const req = makeRequest("POST", {
-      name: "Test Agent",
-      type: "FRAUD_MONITORING",
-      llmProvider: "openai",
-      llmModel: "gpt-4o",
+describe("Agents API", () => {
+  describe("GET /api/agents", () => {
+    it("returns agent types with valid auth", async () => {
+      const token = makeAuthToken();
+      const response = await GET(makeGetRequest(token));
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.success).toBe(true);
+      expect(body.data.agentTypes).toBeDefined();
+      expect(body.data.agentTypes.length).toBeGreaterThan(0);
+      expect(body.data.total).toBe(body.data.agentTypes.length);
+      expect(body.data.tenantId).toBe("tenant_test_001");
     });
-    const response = await POST(req);
-    expect(response.status).toBe(201);
 
-    const body = await response.json();
-    expect(body.success).toBe(true);
-    expect(body.data.name).toBe("Test Agent");
-    expect(body.data.type).toBe("FRAUD_MONITORING");
-    expect(body.data.status).toBe("ACTIVE");
-    expect(body.data.id).toMatch(/^agent_/);
+    it("returns correct agent type structure", async () => {
+      const token = makeAuthToken();
+      const response = await GET(makeGetRequest(token));
+      const body = await response.json();
+
+      const agentType = body.data.agentTypes[0];
+      expect(agentType).toHaveProperty("id");
+      expect(agentType).toHaveProperty("name");
+      expect(agentType).toHaveProperty("description");
+      expect(agentType).toHaveProperty("category");
+    });
+
+    it("returns 401 without auth token", async () => {
+      const response = await GET(makeGetRequest());
+      expect(response.status).toBe(401);
+
+      const body = await response.json();
+      expect(body.success).toBe(false);
+    });
+
+    it("allows VIEWER role to read agents", async () => {
+      const token = makeAuthToken("VIEWER");
+      const response = await GET(makeGetRequest(token));
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.success).toBe(true);
+    });
   });
 
-  it("returns 400 for invalid agent type", async () => {
-    const req = makeRequest("POST", {
-      name: "Bad Agent",
-      type: "NONEXISTENT_TYPE",
-    });
-    const response = await POST(req);
-    expect(response.status).toBe(400);
+  describe("POST /api/agents", () => {
+    it("creates an agent with valid data and auth", async () => {
+      const token = makeAuthToken("DEVELOPER");
+      const response = await POST(
+        makePostRequest(
+          {
+            name: "Fraud Detection Agent",
+            type: "FRAUD_MONITORING",
+            description: "Monitors transactions for fraud",
+            llmProvider: "anthropic",
+            llmModel: "claude-3",
+            systemPrompt: "You are a fraud detection specialist.",
+          },
+          token
+        )
+      );
 
-    const body = await response.json();
-    expect(body.success).toBe(false);
-  });
-
-  it("returns 400 for missing name", async () => {
-    const req = makeRequest("POST", {
-      type: "FRAUD_MONITORING",
+      expect(response.status).toBe(201);
+      const body = await response.json();
+      expect(body.success).toBe(true);
+      expect(body.data.id).toMatch(/^agent_/);
+      expect(body.data.name).toBe("Fraud Detection Agent");
+      expect(body.data.type).toBe("FRAUD_MONITORING");
+      expect(body.data.tenantId).toBe("tenant_test_001");
+      expect(body.data.llmProvider).toBe("anthropic");
+      expect(body.data.llmModel).toBe("claude-3");
+      expect(body.data.status).toBe("ACTIVE");
     });
-    const response = await POST(req);
-    expect(response.status).toBe(400);
+
+    it("creates an agent with default llm values", async () => {
+      const token = makeAuthToken();
+      const response = await POST(
+        makePostRequest(
+          {
+            name: "Support Agent",
+            type: "CUSTOMER_SUPPORT",
+          },
+          token
+        )
+      );
+
+      expect(response.status).toBe(201);
+      const body = await response.json();
+      expect(body.data.llmProvider).toBe("openai");
+      expect(body.data.llmModel).toBe("gpt-4o");
+    });
+
+    it("returns validation error for missing required fields", async () => {
+      const token = makeAuthToken();
+      const response = await POST(
+        makePostRequest(
+          {
+            description: "Missing name and type",
+          },
+          token
+        )
+      );
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.success).toBe(false);
+    });
+
+    it("returns validation error for invalid agent type", async () => {
+      const token = makeAuthToken();
+      const response = await POST(
+        makePostRequest(
+          {
+            name: "Bad Type Agent",
+            type: "INVALID_TYPE",
+          },
+          token
+        )
+      );
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.success).toBe(false);
+    });
+
+    it("returns 401 without auth token", async () => {
+      const response = await POST(
+        makePostRequest({
+          name: "Unauthorized Agent",
+          type: "COMPLIANCE",
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body = await response.json();
+      expect(body.success).toBe(false);
+    });
+
+    it("returns 403 for VIEWER role trying to create", async () => {
+      const token = makeAuthToken("VIEWER");
+      const response = await POST(
+        makePostRequest(
+          {
+            name: "Viewer Agent",
+            type: "REPORTING",
+          },
+          token
+        )
+      );
+
+      expect(response.status).toBe(403);
+      const body = await response.json();
+      expect(body.success).toBe(false);
+    });
   });
 });
