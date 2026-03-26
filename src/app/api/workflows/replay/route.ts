@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getReplayEngine } from "@/lib/workflows/replay-engine";
+import { WorkflowReplaySchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -36,17 +38,14 @@ export const GET = withAuth("workflows:read", async (req: NextRequest) => {
 export const POST = withAuth("workflows:create", async (req: NextRequest) => {
   try {
     const body = await req.json();
-    const { executionId, fromStepIndex, modifiedInput } = body;
-
-    if (!executionId || fromStepIndex === undefined || !modifiedInput) {
-      return apiError("executionId, fromStepIndex, and modifiedInput required");
-    }
+    const parsed = WorkflowReplaySchema.parse(body);
 
     const engine = getReplayEngine();
-    const result = engine.replayFrom({ executionId, fromStepIndex, modifiedInput });
+    const result = engine.replayFrom(parsed);
 
     return apiResponse({ replay: result }, 201);
   } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError(error instanceof Error ? error.message : "Invalid request body");
   }
 });

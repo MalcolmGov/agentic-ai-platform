@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getKnowledgeGraph, getIngester } from "@/lib/knowledge/knowledge-graph";
+import { KnowledgeIngestSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -43,23 +45,20 @@ export const GET = withAuth("analytics:read", async (req: NextRequest, { user })
 export const POST = withAuth("agents:execute", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { action } = body;
+    const parsed = KnowledgeIngestSchema.parse(body);
 
-    if (action === "ingest") {
-      const { agentId, agentName, agentType, result, reasoning } = body;
-      if (!agentId || !result) return apiError("agentId and result required");
+    const ingester = getIngester();
+    const nodes = ingester.ingestExecutionResult({
+      agentId: parsed.agentId, agentName: parsed.agentName || parsed.agentId,
+      agentType: parsed.agentType || "unknown",
+      tenantId: user.tenantId,
+      result: parsed.result as Record<string, unknown>,
+      reasoning: parsed.reasoning as string | undefined,
+    });
 
-      const ingester = getIngester();
-      const nodes = ingester.ingestExecutionResult({
-        agentId, agentName: agentName || agentId, agentType: agentType || "unknown",
-        tenantId: user.tenantId, result, reasoning,
-      });
-
-      return apiResponse({ ingestedNodes: nodes.length, nodes }, 201);
-    }
-
-    return apiError("Invalid action. Supported: ingest");
-  } catch {
+    return apiResponse({ ingestedNodes: nodes.length, nodes }, 201);
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });

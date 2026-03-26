@@ -11,6 +11,8 @@ import { withAuth } from "@/lib/auth/rbac";
 import { auditFromRequest } from "@/lib/audit/logger";
 import { reasonAndAct, LLMToolDefinition } from "@/lib/llm/gateway";
 import { createAgentMemory } from "@/lib/memory/vector-store";
+import { ExecuteAgentSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json(
@@ -134,11 +136,8 @@ async function executeAgentTool(
 export const POST = withAuth("agents:execute", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { agentId, agentType, input, systemPrompt } = body;
-
-    if (!agentId || !agentType) {
-      return apiError("agentId and agentType are required", 400);
-    }
+    const parsed = ExecuteAgentSchema.parse(body);
+    const { agentId, agentType, input, systemPrompt } = parsed;
 
     const startTime = Date.now();
 
@@ -163,7 +162,7 @@ export const POST = withAuth("agents:execute", async (req: NextRequest, { user }
         inputText,
         AGENT_TOOLS,
         (name, args) => executeAgentTool(name, args, memory),
-        { model: body.model || "gpt-4o-mini", maxIterations: 5 }
+        { model: parsed.model || "gpt-4o-mini", maxIterations: 5 }
       );
     } catch (error) {
       // LLM not configured — return simulated execution
@@ -214,6 +213,7 @@ export const POST = withAuth("agents:execute", async (req: NextRequest, { user }
       },
     });
   } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     console.error("[Agent Execute]", error);
     return apiError("Agent execution failed: " + (error as Error).message, 500);
   }

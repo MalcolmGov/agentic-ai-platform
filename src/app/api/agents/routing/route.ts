@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getModelRouter } from "@/lib/llm/multi-model-router";
 import type { TaskType } from "@/lib/llm/multi-model-router";
+import { AgentRoutingSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -37,17 +39,23 @@ export const GET = withAuth("agents:read", async (req: NextRequest) => {
 export const POST = withAuth("settings:update", async (req: NextRequest) => {
   try {
     const body = await req.json();
-    const { route } = body;
-
-    if (!route || !route.taskType || !route.model || !route.provider) {
-      return apiError("route with taskType, model, provider required");
-    }
+    const parsed = AgentRoutingSchema.parse(body);
 
     const router = getModelRouter();
+    const route = {
+      taskType: parsed.route.taskType as TaskType,
+      model: parsed.route.model,
+      provider: parsed.route.provider,
+      costPer1kTokens: parsed.route.costPer1kTokens ?? 0,
+      qualityScore: 0.8,
+      avgLatencyMs: 0,
+      maxTokens: parsed.route.maxTokens ?? 4096,
+    };
     router.addRoute(route);
 
     return apiResponse({ updated: route }, 201);
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });

@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { auditFromRequest } from "@/lib/audit/logger";
+import { CreateAgentSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 const AGENT_TYPES = [
   { id: "FRAUD_MONITORING", name: "Fraud Monitoring Agent", description: "Monitors transactions, flags anomalies, generates risk scores", category: "Security" },
@@ -54,36 +56,29 @@ export const GET = withAuth("agents:read", async (_req, { user }) => {
 export const POST = withAuth("agents:create", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { name, type, llmProvider, llmModel, systemPrompt, schedule } = body;
-
-    if (!name || !type) {
-      return apiError("name and type are required", 400);
-    }
-
-    if (!AGENT_TYPES.find((a) => a.id === type)) {
-      return apiError(`Invalid agent type: ${type}`, 400);
-    }
+    const parsed = CreateAgentSchema.parse(body);
 
     const agent = {
       id: `agent_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      name,
-      type,
+      name: parsed.name,
+      type: parsed.type,
       tenantId: user.tenantId,
-      llmProvider: llmProvider || "openai",
-      llmModel: llmModel || "gpt-4o",
-      systemPrompt: systemPrompt || "",
-      schedule: schedule || null,
+      llmProvider: parsed.llmProvider || "openai",
+      llmModel: parsed.llmModel || "gpt-4o",
+      systemPrompt: parsed.systemPrompt || "",
+      schedule: parsed.schedule || null,
       status: "ACTIVE",
       createdAt: new Date().toISOString(),
     };
 
     // Audit log
     await auditFromRequest(req, user, "agent.create", `agent:${agent.id}`, {
-      name, type, llmProvider: agent.llmProvider,
+      name: parsed.name, type: parsed.type, llmProvider: agent.llmProvider,
     });
 
     return apiResponse(agent, 201);
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body", 400);
   }
 });

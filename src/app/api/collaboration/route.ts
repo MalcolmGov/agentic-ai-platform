@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getCollaborationHub } from "@/lib/collaboration/realtime-presence";
+import { CollaborationSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -29,14 +31,12 @@ export const GET = withAuth("agents:read", async (_req, { user }) => {
 export const POST = withAuth("agents:read", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { action } = body;
+    const parsed = CollaborationSchema.parse(body);
 
     const hub = getCollaborationHub();
 
-    if (action === "presence") {
-      const { page } = body;
-      if (!page) return apiError("page is required");
-      const presence = hub.trackPresence(user.userId, page, {
+    if (parsed.action === "presence") {
+      const presence = hub.trackPresence(user.userId, parsed.page, {
         name: user.email.split("@")[0],
         email: user.email,
         tenantId: user.tenantId,
@@ -44,20 +44,18 @@ export const POST = withAuth("agents:read", async (req: NextRequest, { user }) =
       return apiResponse({ presence });
     }
 
-    if (action === "annotate") {
-      const { executionId, stepIndex, comment } = body;
-      if (!executionId || stepIndex === undefined || !comment) {
-        return apiError("executionId, stepIndex, and comment required");
-      }
+    if (parsed.action === "annotate") {
       const annotation = hub.addAnnotation({
         userId: user.userId, userName: user.email.split("@")[0],
-        executionId, stepIndex, comment, tenantId: user.tenantId,
+        executionId: parsed.executionId, stepIndex: parsed.stepIndex,
+        comment: parsed.comment, tenantId: user.tenantId,
       });
       return apiResponse({ annotation }, 201);
     }
 
-    return apiError("Invalid action. Supported: presence, annotate");
-  } catch {
+    return apiError("Invalid action", 400);
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });

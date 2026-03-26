@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, generateToken, TokenPayload } from "@/lib/auth/jwt";
 import { logAudit } from "@/lib/audit/logger";
+import { RegisterSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json(
@@ -26,20 +28,8 @@ function apiError(message: string, status = 400) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, name, organizationName, industry } = body;
-
-    // Validate input
-    if (!email || !password || !name || !organizationName) {
-      return apiError("email, password, name, and organizationName are required", 400);
-    }
-
-    if (password.length < 8) {
-      return apiError("Password must be at least 8 characters", 400);
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return apiError("Invalid email format", 400);
-    }
+    const parsed = RegisterSchema.parse(body);
+    const { email, password, name, organizationName, industry } = parsed;
 
     // Hash password
     const passwordHash = await hashPassword(password);
@@ -119,6 +109,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     console.error("[Auth Register]", error);
     return apiError("Registration failed", 500);
   }

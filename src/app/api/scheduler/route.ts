@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { scheduler } from "@/lib/scheduler/scheduler";
 import { auditFromRequest } from "@/lib/audit/logger";
+import { ScheduleAgentSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json(
@@ -38,11 +40,7 @@ export const GET = withAuth("agents:read", async (_req, { user }) => {
 export const POST = withAuth("agents:create", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { agentId, schedule, enabled } = body;
-
-    if (!agentId || !schedule) {
-      return apiError("agentId and schedule are required", 400);
-    }
+    const parsed = ScheduleAgentSchema.parse(body);
 
     const validSchedules = [
       "manual", "realtime",
@@ -54,18 +52,19 @@ export const POST = withAuth("agents:create", async (req: NextRequest, { user })
       "0 0 * * *", "0 0 * * 1",
     ];
 
-    if (!validSchedules.includes(schedule)) {
+    if (!validSchedules.includes(parsed.schedule)) {
       return apiError(`Invalid schedule. Valid values: ${validSchedules.join(", ")}`, 400);
     }
 
-    const job = scheduler.schedule(agentId, user.tenantId, schedule, enabled !== false);
+    const job = scheduler.schedule(parsed.agentId, user.tenantId, parsed.schedule, parsed.enabled !== false);
 
     await auditFromRequest(req, user, "scheduler.create", `job:${job.id}`, {
-      agentId, schedule, enabled: job.enabled,
+      agentId: parsed.agentId, schedule: parsed.schedule, enabled: job.enabled,
     });
 
     return apiResponse(job, 201);
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body", 400);
   }
 });

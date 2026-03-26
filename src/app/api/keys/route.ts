@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { generateApiKey, listApiKeys, revokeApiKey, ApiScope } from "@/lib/security/api-keys";
 import { auditFromRequest } from "@/lib/audit/logger";
+import { CreateApiKeySchema, RevokeApiKeySchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -37,23 +39,18 @@ export const GET = withAuth("apikeys:read", async (_req, { user }) => {
 export const POST = withAuth("apikeys:create", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { name, scopes, expiresInDays } = body;
-
-    if (!name) return apiError("name is required", 400);
-    if (!scopes || !Array.isArray(scopes) || scopes.length === 0) {
-      return apiError("scopes array is required", 400);
-    }
+    const parsed = CreateApiKeySchema.parse(body);
 
     const { rawKey, record } = generateApiKey(
-      name,
-      scopes as ApiScope[],
+      parsed.name,
+      parsed.scopes as ApiScope[],
       user.tenantId,
       user.userId,
-      expiresInDays
+      parsed.expiresInDays
     );
 
     await auditFromRequest(req, user, "apikey.create", `apikey:${record.id}`, {
-      name, scopes, expiresInDays,
+      name: parsed.name, scopes: parsed.scopes, expiresInDays: parsed.expiresInDays,
     });
 
     return apiResponse({
@@ -66,6 +63,7 @@ export const POST = withAuth("apikeys:create", async (req: NextRequest, { user }
       warning: "Store this key securely — it will not be shown again.",
     }, 201);
   } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError((error as Error).message, 400);
   }
 });
@@ -74,16 +72,16 @@ export const POST = withAuth("apikeys:create", async (req: NextRequest, { user }
 export const DELETE = withAuth("apikeys:revoke", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { keyId } = body;
-    if (!keyId) return apiError("keyId is required", 400);
+    const parsed = RevokeApiKeySchema.parse(body);
 
-    const revoked = revokeApiKey(keyId, user.tenantId);
+    const revoked = revokeApiKey(parsed.keyId, user.tenantId);
     if (!revoked) return apiError("Key not found or already revoked", 404);
 
-    await auditFromRequest(req, user, "apikey.revoke", `apikey:${keyId}`);
+    await auditFromRequest(req, user, "apikey.revoke", `apikey:${parsed.keyId}`);
 
-    return apiResponse({ keyId, status: "revoked" });
-  } catch {
+    return apiResponse({ keyId: parsed.keyId, status: "revoked" });
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request", 400);
   }
 });

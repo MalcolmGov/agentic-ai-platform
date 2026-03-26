@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getVoiceProcessor } from "@/lib/voice/voice-command-processor";
+import { VoiceCommandSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -26,15 +28,14 @@ export const GET = withAuth("agents:read", async () => {
 export const POST = withAuth("agents:execute", async (req: NextRequest) => {
   try {
     const body = await req.json();
-    const { transcript } = body;
-
-    if (!transcript) return apiError("transcript is required");
+    const parsed = VoiceCommandSchema.parse(body);
 
     const processor = getVoiceProcessor();
-    const command = processor.processTranscript(transcript);
+    const command = processor.processTranscript(parsed.transcript);
 
     return apiResponse({ command });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });

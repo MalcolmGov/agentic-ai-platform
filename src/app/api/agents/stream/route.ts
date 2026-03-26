@@ -12,6 +12,8 @@ import { authenticateRequest, AuthError } from "@/lib/auth/jwt";
 import { hasPermission } from "@/lib/auth/rbac";
 import { auditFromRequest } from "@/lib/audit/logger";
 import { createAgentMemory } from "@/lib/memory/vector-store";
+import { StreamAgentSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function getDefaultPrompt(agentType: string): string {
   const prompts: Record<string, string> = {
@@ -45,15 +47,13 @@ export async function POST(req: NextRequest) {
 
   let body;
   try {
-    body = await req.json();
-  } catch {
+    body = StreamAgentSchema.parse(await req.json());
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return new Response(JSON.stringify({ success: false, error: "Invalid body" }), { status: 400 });
   }
 
   const { agentId, agentType, input } = body;
-  if (!agentId || !agentType) {
-    return new Response(JSON.stringify({ success: false, error: "agentId and agentType required" }), { status: 400 });
-  }
 
   const executionId = `exec_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   const memory = createAgentMemory(user.tenantId, agentId);

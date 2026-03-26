@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { auditFromRequest } from "@/lib/audit/logger";
+import { CreateWorkflowSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json(
@@ -40,28 +42,25 @@ export const GET = withAuth("workflows:read", async (_req, { user }) => {
 export const POST = withAuth("workflows:create", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { name, description, triggerType, steps } = body;
-
-    if (!name) {
-      return apiError("name is required", 400);
-    }
+    const parsed = CreateWorkflowSchema.parse(body);
 
     const workflow = {
       id: `wf-${Date.now().toString(36)}`,
-      name,
-      description: description || "",
-      triggerType: triggerType || "MANUAL",
+      name: parsed.name,
+      description: parsed.description || "",
+      triggerType: parsed.triggerType || "MANUAL",
       status: "DRAFT",
       tenantId: user.tenantId,
-      stepsCount: steps?.length || 0,
+      stepsCount: parsed.steps?.length || 0,
       executions: 0,
       createdAt: new Date().toISOString(),
     };
 
-    await auditFromRequest(req, user, "workflow.create", `workflow:${workflow.id}`, { name, triggerType: workflow.triggerType });
+    await auditFromRequest(req, user, "workflow.create", `workflow:${workflow.id}`, { name: parsed.name, triggerType: workflow.triggerType });
 
     return apiResponse(workflow, 201);
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body", 400);
   }
 });

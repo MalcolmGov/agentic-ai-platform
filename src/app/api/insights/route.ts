@@ -14,6 +14,8 @@ import {
   PredictiveModel,
   AnomalyDetector,
 } from "@/lib/insights/predictive-engine";
+import { WhatIfScenarioSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -53,11 +55,7 @@ export const GET = withAuth("analytics:read", async (_req, { user }) => {
 export const POST = withAuth("analytics:read", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { scenario } = body;
-
-    if (!scenario || !scenario.name || !scenario.modifications) {
-      return apiError("scenario with name and modifications is required");
-    }
+    const parsed = WhatIfScenarioSchema.parse(body);
 
     const analyzer = getAnalyzer();
     const simulator = getSimulator();
@@ -70,10 +68,14 @@ export const POST = withAuth("analytics:read", async (req: NextRequest, { user }
       errorRate: 1 - analyzer.getSuccessRate(),
     };
 
-    const result = simulator.simulate(baseMetrics, scenario);
+    const result = simulator.simulate(baseMetrics, {
+      ...parsed.scenario,
+      description: parsed.scenario.name,
+    });
 
     return apiResponse({ simulation: result, baseMetrics, tenantId: user.tenantId });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });

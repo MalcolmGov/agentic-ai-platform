@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPassword, generateToken, TokenPayload } from "@/lib/auth/jwt";
 import { logAudit } from "@/lib/audit/logger";
+import { LoginSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json(
@@ -58,11 +60,8 @@ export async function POST(req: NextRequest) {
     await ensureSeeded();
     
     const body = await req.json();
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return apiError("email and password are required", 400);
-    }
+    const parsed = LoginSchema.parse(body);
+    const { email, password } = parsed;
 
     // Development: check in-memory store
     // Production: await prisma.user.findUnique({ where: { email }, include: { tenant: true } })
@@ -137,6 +136,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     console.error("[Auth Login]", error);
     return apiError("Login failed", 500);
   }

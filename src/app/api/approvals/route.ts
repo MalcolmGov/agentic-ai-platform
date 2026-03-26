@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getApprovalManager } from "@/lib/agents/approval-gates";
+import { ApprovalResponseSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -31,18 +33,16 @@ export const GET = withAuth("agents:read", async (req: NextRequest, { user }) =>
 export const POST = withAuth("agents:execute", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { gateId, decision, comment } = body;
-
-    if (!gateId || !decision) return apiError("gateId and decision (approved/rejected) required");
-    if (!["approved", "rejected"].includes(decision)) return apiError("decision must be 'approved' or 'rejected'");
+    const parsed = ApprovalResponseSchema.parse(body);
 
     const manager = getApprovalManager();
-    const gate = manager.respondToGate(gateId, decision, user.userId, comment);
+    const gate = manager.respondToGate(parsed.gateId, parsed.decision, user.userId, parsed.comment);
 
     if (!gate) return apiError("Gate not found or already resolved", 404);
 
     return apiResponse({ gate });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });

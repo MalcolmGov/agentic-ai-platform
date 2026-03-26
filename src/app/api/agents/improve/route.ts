@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getPerformanceTracker, getPromptOptimizer, getABTester } from "@/lib/agents/self-improvement";
+import { AgentImproveSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -45,17 +47,12 @@ export const GET = withAuth("agents:read", async (req: NextRequest) => {
 export const POST = withAuth("agents:execute", async (req: NextRequest) => {
   try {
     const body = await req.json();
-    const { action } = body;
+    const parsed = AgentImproveSchema.parse(body);
 
-    if (action === "ab_test") {
-      const { name, agentIdA, agentIdB, totalRuns } = body;
-      if (!name || !agentIdA || !agentIdB) return apiError("name, agentIdA, agentIdB required");
-      const test = getABTester().createTest(name, agentIdA, agentIdB, totalRuns || 100);
-      return apiResponse({ test }, 201);
-    }
-
-    return apiError("Invalid action. Supported: ab_test");
-  } catch {
+    const test = getABTester().createTest(parsed.name, parsed.agentIdA, parsed.agentIdB, parsed.totalRuns || 100);
+    return apiResponse({ test }, 201);
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });

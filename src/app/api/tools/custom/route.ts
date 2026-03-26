@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/rbac";
 import { getToolRegistry, getToolSandbox } from "@/lib/tools/custom-tool-sdk";
+import { CustomToolSchema, validationError } from "@/lib/validation/schemas";
+import { ZodError } from "zod";
 
 function apiResponse(data: unknown, status = 200) {
   return NextResponse.json({ success: true, data, timestamp: new Date().toISOString() }, { status });
@@ -27,25 +29,21 @@ export const GET = withAuth("agents:read", async (_req, { user }) => {
 export const POST = withAuth("agents:create", async (req: NextRequest, { user }) => {
   try {
     const body = await req.json();
-    const { action } = body;
+    const parsed = CustomToolSchema.parse(body);
 
-    if (action === "test") {
-      const { toolDef, sampleInput } = body;
-      if (!toolDef || !sampleInput) return apiError("toolDef and sampleInput required");
+    if (parsed.action === "test") {
       const sandbox = getToolSandbox();
-      const result = await sandbox.testRun(toolDef, sampleInput);
+      const result = await sandbox.testRun(parsed.toolDef as Parameters<typeof sandbox.testRun>[0], parsed.sampleInput);
       return apiResponse({ testResult: result });
     }
 
-    if (action === "create") {
-      const { name, description, inputSchema, outputSchema, code } = body;
-      if (!name || !code) return apiError("name and code required");
-
+    if (parsed.action === "create") {
       const sandbox = getToolSandbox();
       const toolDef = {
         id: `tool_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        name, description: description || "", inputSchema: inputSchema || {},
-        outputSchema: outputSchema || {}, code, tenantId: user.tenantId,
+        name: parsed.name, description: parsed.description || "",
+        inputSchema: parsed.inputSchema || {}, outputSchema: parsed.outputSchema || {},
+        code: parsed.code, tenantId: user.tenantId,
         createdBy: user.email, version: 1, status: "draft" as const,
         executionCount: 0, avgLatencyMs: 0, successRate: 0,
         createdAt: Date.now(), updatedAt: Date.now(),
@@ -59,8 +57,9 @@ export const POST = withAuth("agents:create", async (req: NextRequest, { user })
       return apiResponse({ tool: toolDef, validation }, 201);
     }
 
-    return apiError("Invalid action. Supported: create, test");
-  } catch {
+    return apiError("Invalid action", 400);
+  } catch (error) {
+    if (error instanceof ZodError) return validationError(error);
     return apiError("Invalid request body");
   }
 });
