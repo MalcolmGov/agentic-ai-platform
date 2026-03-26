@@ -28,6 +28,9 @@ const navItems = [
   { href: "/dashboard/marketplace", label: "Marketplace", icon: IntegrationIcon },
   { href: "/dashboard/crystal-ball", label: "Crystal Ball", icon: AnalyticsIcon },
   { href: "/dashboard/voice", label: "Voice", icon: BellIcon },
+  { href: "/dashboard/approvals", label: "Approvals", icon: AgentIcon },
+  { href: "/dashboard/experiments", label: "A/B Testing", icon: AnalyticsIcon },
+  { href: "/dashboard/scaling", label: "Scaling", icon: WorkflowIcon },
   { href: "/dashboard/workflows", label: "Workflows", icon: WorkflowIcon },
   { href: "/dashboard/integrations", label: "Integrations", icon: IntegrationIcon },
   { href: "/dashboard/analytics", label: "Analytics", icon: AnalyticsIcon },
@@ -38,6 +41,9 @@ const navItems = [
   { href: "/dashboard/users", label: "Users", icon: UsersIcon },
   { href: "/dashboard/notifications", label: "Notifications", icon: BellIcon },
   { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
+  { href: "/dashboard/settings/sso", label: "SSO / SAML", icon: SettingsIcon },
+  { href: "/dashboard/settings/billing", label: "Billing", icon: SettingsIcon },
+  { href: "/dashboard/settings/integrations", label: "Integrations Hub", icon: IntegrationIcon },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
