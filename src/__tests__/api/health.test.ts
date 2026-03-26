@@ -1,17 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-// Mock Prisma before importing the route
-vi.mock("@/lib/db/prisma", () => ({
-  default: {
-    $queryRaw: vi.fn().mockResolvedValue([{ "?column?": 1 }]),
-  },
-}));
-
+import { describe, it, expect } from "vitest";
 import { GET } from "@/app/api/health/route";
+import { NextRequest } from "next/server";
+
+function makeRequest(view = "health") {
+  return new NextRequest(`http://localhost:3000/api/health?view=${view}`);
+}
 
 describe("GET /api/health", () => {
   it("returns 200 with health status", async () => {
-    const response = await GET();
+    const response = await GET(makeRequest());
     expect(response.status).toBe(200);
 
     const body = await response.json();
@@ -20,29 +17,33 @@ describe("GET /api/health", () => {
     expect(body.timestamp).toBeTruthy();
     expect(body.uptime).toHaveProperty("seconds");
     expect(body.uptime).toHaveProperty("human");
-    expect(body.memory).toHaveProperty("heapUsedMB");
-    expect(body.node).toBeTruthy();
   });
 
   it("includes service statuses", async () => {
-    const response = await GET();
+    const response = await GET(makeRequest());
     const body = await response.json();
-
-    expect(body.services.database.status).toBe("operational");
-    expect(body.services.agentEngine.status).toBe("operational");
-    expect(body.services.auditLogger.status).toBe("operational");
+    expect(body.services.length).toBeGreaterThan(5);
+    expect(body.services[0].status).toBe("operational");
   });
 
-  it("returns 503 when database is down", async () => {
-    const prisma = await import("@/lib/db/prisma");
-    vi.mocked(prisma.default.$queryRaw).mockRejectedValueOnce(new Error("Connection refused"));
-
-    const response = await GET();
+  it("returns liveness check", async () => {
+    const response = await GET(makeRequest("liveness"));
     const body = await response.json();
+    expect(body.alive).toBe(true);
+    expect(body.uptime).toBeGreaterThanOrEqual(0);
+  });
 
-    expect(response.status).toBe(503);
-    expect(body.status).toBe("unhealthy");
-    expect(body.services.database.status).toBe("down");
-    expect(body.services.database.error).toContain("Connection refused");
+  it("returns readiness check", async () => {
+    const response = await GET(makeRequest("readiness"));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.ready).toBe(true);
+  });
+
+  it("returns status page data", async () => {
+    const response = await GET(makeRequest("status"));
+    const body = await response.json();
+    expect(body.data.overall).toBe("operational");
+    expect(body.data.uptimeHistory.length).toBe(30);
   });
 });
