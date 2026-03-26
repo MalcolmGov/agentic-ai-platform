@@ -19,27 +19,33 @@ import {
 } from "@/components/icons";
 
 const navItems = [
+  // ── Core ──
   { href: "/dashboard", label: "Overview", icon: DashboardIcon },
   { href: "/dashboard/agents", label: "Agents", icon: AgentIcon },
+  { href: "/dashboard/agents/versions", label: "Versioning", icon: AgentIcon },
+  { href: "/dashboard/agents/improve", label: "Self-Improve", icon: AnalyticsIcon },
+  // ── AI Features ──
   { href: "/dashboard/studio", label: "Agent Studio", icon: WorkflowIcon },
   { href: "/dashboard/glass-box", label: "Glass Box AI", icon: SearchIcon },
   { href: "/dashboard/copilot", label: "Ops Copilot", icon: AgentIcon },
   { href: "/dashboard/collaboration", label: "Multi-Agent", icon: UsersIcon },
   { href: "/dashboard/marketplace", label: "Marketplace", icon: IntegrationIcon },
   { href: "/dashboard/crystal-ball", label: "Crystal Ball", icon: AnalyticsIcon },
+  { href: "/dashboard/insights", label: "Predictions", icon: AnalyticsIcon },
+  { href: "/dashboard/knowledge", label: "Knowledge Graph", icon: SearchIcon },
   { href: "/dashboard/voice", label: "Voice", icon: BellIcon },
+  // ── Operations ──
   { href: "/dashboard/approvals", label: "Approvals", icon: AgentIcon },
   { href: "/dashboard/experiments", label: "A/B Testing", icon: AnalyticsIcon },
   { href: "/dashboard/scaling", label: "Scaling", icon: WorkflowIcon },
   { href: "/dashboard/workflows", label: "Workflows", icon: WorkflowIcon },
+  { href: "/dashboard/workflows/replay", label: "Replay", icon: WorkflowIcon },
+  { href: "/dashboard/tools", label: "Custom Tools", icon: IntegrationIcon },
+  // ── Analytics & Admin ──
   { href: "/dashboard/integrations", label: "Integrations", icon: IntegrationIcon },
   { href: "/dashboard/analytics", label: "Analytics", icon: AnalyticsIcon },
   { href: "/dashboard/logs", label: "Logs & Audit", icon: LogIcon },
-  { href: "/dashboard/reviews", label: "Reviews", icon: BellIcon },
-  { href: "/dashboard/helpdesk", label: "IT Helpdesk", icon: AgentIcon },
-  { href: "/dashboard/intel", label: "Intel", icon: SearchIcon },
   { href: "/dashboard/users", label: "Users", icon: UsersIcon },
-  { href: "/dashboard/notifications", label: "Notifications", icon: BellIcon },
   { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
   { href: "/dashboard/settings/sso", label: "SSO / SAML", icon: SettingsIcon },
   { href: "/dashboard/settings/billing", label: "Billing", icon: SettingsIcon },
