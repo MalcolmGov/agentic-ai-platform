@@ -4,15 +4,39 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+const PLANS = [
+  {
+    id: "STARTER",
+    name: "Starter",
+    price: "$49/mo",
+    description: "Up to 5 agents, 1,000 executions/mo",
+  },
+  {
+    id: "PROFESSIONAL",
+    name: "Professional",
+    price: "$199/mo",
+    description: "Up to 25 agents, 10,000 executions/mo",
+  },
+  {
+    id: "ENTERPRISE",
+    name: "Enterprise",
+    price: "Custom",
+    description: "Unlimited agents, dedicated support",
+  },
+] as const;
+
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     organizationName: "",
     industry: "Financial Services",
+    plan: "STARTER",
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,13 +47,36 @@ export default function RegisterPage() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Client-side validation
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    if (!termsAccepted) {
+      setError("You must accept the terms and conditions");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          organizationName: form.organizationName,
+          industry: form.industry,
+        }),
       });
 
       const data = await res.json();
@@ -40,8 +87,8 @@ export default function RegisterPage() {
         return;
       }
 
-      localStorage.setItem("auth_token", data.data.token);
-      router.push("/dashboard");
+      // Redirect to login with success message
+      router.push("/login?registered=true");
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -49,13 +96,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-12">
+      {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-electric-500/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md px-6 animate-fade-in">
+      <div className="relative z-10 w-full max-w-lg px-6 animate-fade-in">
+        {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-electric-500 to-violet-500 flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -66,48 +115,134 @@ export default function RegisterPage() {
           <p className="text-text-secondary mt-1 text-sm">Start deploying AI agents for your organization</p>
         </div>
 
-        <form onSubmit={handleRegister} className="glass-card p-8 space-y-4">
+        {/* Registration Form */}
+        <form onSubmit={handleRegister} className="glass-card p-8 space-y-5">
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
               {error}
             </div>
           )}
 
+          {/* Organization Name */}
+          <div>
+            <label className="text-sm text-text-secondary block mb-2">Company Name</label>
+            <input
+              type="text"
+              value={form.organizationName}
+              onChange={(e) => update("organizationName", e.target.value)}
+              className="input-field"
+              placeholder="Acme Corporation"
+              required
+            />
+          </div>
+
+          {/* Full Name */}
           <div>
             <label className="text-sm text-text-secondary block mb-2">Full Name</label>
-            <input type="text" value={form.name} onChange={(e) => update("name", e.target.value)} className="input-field" placeholder="John Anderson" required />
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => update("name", e.target.value)}
+              className="input-field"
+              placeholder="John Anderson"
+              required
+            />
           </div>
 
+          {/* Email */}
           <div>
             <label className="text-sm text-text-secondary block mb-2">Work Email</label>
-            <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} className="input-field" placeholder="john@acme.com" required />
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => update("email", e.target.value)}
+              className="input-field"
+              placeholder="john@acme.com"
+              required
+            />
           </div>
 
+          {/* Password */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-text-secondary block mb-2">Password</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => update("password", e.target.value)}
+                className="input-field"
+                placeholder="Min 8 characters"
+                required
+                minLength={8}
+              />
+            </div>
+            <div>
+              <label className="text-sm text-text-secondary block mb-2">Confirm Password</label>
+              <input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => update("confirmPassword", e.target.value)}
+                className="input-field"
+                placeholder="Repeat password"
+                required
+                minLength={8}
+              />
+            </div>
+          </div>
+
+          {/* Plan Selector */}
           <div>
-            <label className="text-sm text-text-secondary block mb-2">Password</label>
-            <input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} className="input-field" placeholder="Min 8 characters" required minLength={8} />
+            <label className="text-sm text-text-secondary block mb-3">Select Plan</label>
+            <div className="grid grid-cols-3 gap-3">
+              {PLANS.map((plan) => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => update("plan", plan.id)}
+                  className={`relative p-4 rounded-xl border text-left transition-all ${
+                    form.plan === plan.id
+                      ? "border-electric-500 bg-electric-500/10 shadow-[0_0_16px_rgba(59,130,246,0.15)]"
+                      : "border-border bg-navy-800/50 hover:border-border-active"
+                  }`}
+                >
+                  <div className="text-sm font-semibold text-text-primary">{plan.name}</div>
+                  <div className="text-xs text-electric-400 font-mono mt-1">{plan.price}</div>
+                  <div className="text-[11px] text-text-muted mt-2 leading-tight">{plan.description}</div>
+                  {form.plan === plan.id && (
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-electric-500 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div>
-            <label className="text-sm text-text-secondary block mb-2">Organization Name</label>
-            <input type="text" value={form.organizationName} onChange={(e) => update("organizationName", e.target.value)} className="input-field" placeholder="Acme Corporation" required />
-          </div>
+          {/* Terms Checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-border bg-navy-800 text-electric-500 focus:ring-electric-500/30 focus:ring-2 accent-[#3b82f6]"
+            />
+            <span className="text-xs text-text-muted leading-relaxed">
+              I agree to the{" "}
+              <span className="text-electric-400 hover:text-electric-300">Terms of Service</span>{" "}
+              and{" "}
+              <span className="text-electric-400 hover:text-electric-300">Privacy Policy</span>.
+              You can change your plan at any time.
+            </span>
+          </label>
 
-          <div>
-            <label className="text-sm text-text-secondary block mb-2">Industry</label>
-            <select value={form.industry} onChange={(e) => update("industry", e.target.value)} className="input-field">
-              <option>Financial Services</option>
-              <option>Fintech</option>
-              <option>Retail</option>
-              <option>Telecommunications</option>
-              <option>Logistics</option>
-              <option>Healthcare</option>
-              <option>Insurance</option>
-              <option>Other</option>
-            </select>
-          </div>
-
-          <button type="submit" disabled={loading} className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed">
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {loading ? "Creating Account..." : "Create Account"}
           </button>
 
