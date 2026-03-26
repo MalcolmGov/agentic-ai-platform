@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AgenticVoiceCoPilot from "@/components/AgenticVoiceCoPilot";
@@ -68,9 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link href="/" className="flex items-center gap-3 no-underline">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-electric-500 to-violet-500 flex items-center justify-center">
-              <AgentIcon className="w-5 h-5 text-white" />
-            </div>
+            <Image src="/logo-3d.png" alt="Agentic AI" width={36} height={36} className="rounded-xl" />
             <div>
               <div className="text-sm font-bold text-text-primary tracking-tight">Agentic AI</div>
               <div className="text-[10px] text-text-muted font-medium uppercase tracking-widest">
