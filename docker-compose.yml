@@ -1,0 +1,76 @@
+# ═══════════════════════════════════════════════
+# Agentic AI Platform — Docker Compose
+# ═══════════════════════════════════════════════
+# Services: app + postgres + redis
+# Usage:
+#   docker compose up --build        (first run)
+#   docker compose up -d             (background)
+#   docker compose exec app npx prisma db seed  (seed data)
+# ═══════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL 16 ────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agentic_ai_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis 7 ──────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Agentic AI App ───────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/agentic_ai_platform?schema=public"
+      REDIS_URL: "redis://redis:6379"
+      JWT_SECRET: "${JWT_SECRET:-prod_jwt_secret_change_this_in_production_64_chars_long_abcdef123456}"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY:-prod_encryption_key_32chars!!}"
+      NODE_ENV: "production"
+      NEXT_PUBLIC_APP_URL: "${APP_URL:-http://localhost:3000}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      SENDGRID_API_KEY: "${SENDGRID_API_KEY:-}"
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+  redis_data:
