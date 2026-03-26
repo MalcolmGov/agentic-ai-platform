@@ -164,8 +164,8 @@ export class AgentCloneManager {
 
     const allKeys = new Set([...Object.keys(configA), ...Object.keys(configB)]);
     allKeys.forEach((key) => {
-      const oldVal = (configA as Record<string, unknown>)[key];
-      const newVal = (configB as Record<string, unknown>)[key];
+      const oldVal = (configA as unknown as Record<string, unknown>)[key];
+      const newVal = (configB as unknown as Record<string, unknown>)[key];
 
       if (oldVal === undefined && newVal !== undefined) {
         diffs.push({ field: key, oldValue: undefined, newValue: newVal, type: "added" });
