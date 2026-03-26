@@ -23,6 +23,8 @@ const navItems = [
   { href: "/dashboard/agents", label: "Agents", icon: AgentIcon },
   { href: "/dashboard/studio", label: "Agent Studio", icon: WorkflowIcon },
   { href: "/dashboard/glass-box", label: "Glass Box AI", icon: SearchIcon },
+  { href: "/dashboard/copilot", label: "Ops Copilot", icon: AgentIcon },
+  { href: "/dashboard/collaboration", label: "Multi-Agent", icon: UsersIcon },
   { href: "/dashboard/workflows", label: "Workflows", icon: WorkflowIcon },
   { href: "/dashboard/integrations", label: "Integrations", icon: IntegrationIcon },
   { href: "/dashboard/analytics", label: "Analytics", icon: AnalyticsIcon },
