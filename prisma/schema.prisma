@@ -1,0 +1,343 @@
+// Agentic AI Platform — Database Schema
+// Prisma Schema for PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Multi-Tenant Core
+// ─────────────────────────────────────────────
+
+model Tenant {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  industry      String?
+  plan          PlanType       @default(STARTER)
+  status        TenantStatus   @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  users         User[]
+  agents        Agent[]
+  workflows     Workflow[]
+  integrations  Integration[]
+  apiKeys       ApiKey[]
+  auditLogs     AuditLog[]
+  alerts        Alert[]
+  subscription  Subscription?
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String
+  passwordHash  String
+  role          UserRole   @default(VIEWER)
+  avatarUrl     String?
+  lastActiveAt  DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  tenantId      String
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  auditLogs     AuditLog[]
+
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// Agent System
+// ─────────────────────────────────────────────
+
+model Agent {
+  id            String         @id @default(cuid())
+  name          String
+  type          AgentType
+  description   String?
+  systemPrompt  String?        @db.Text
+  config        Json           @default("{}")
+  llmProvider   String         @default("openai")
+  llmModel      String         @default("gpt-4o")
+  status        AgentStatus    @default(INACTIVE)
+  schedule      String?        // cron expression or "realtime"
+  tools         String[]       // list of tool IDs this agent can use
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tenantId      String
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  executions    AgentExecution[]
+
+  @@index([tenantId])
+  @@index([type])
+}
+
+model AgentExecution {
+  id            String           @id @default(cuid())
+  status        ExecutionStatus  @default(PENDING)
+  input         Json?
+  output        Json?
+  error         String?          @db.Text
+  durationMs    Int?
+  tokenUsage    Int?
+  costUsd       Float?
+  startedAt     DateTime         @default(now())
+  completedAt   DateTime?
+
+  agentId       String
+  agent         Agent            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([startedAt])
+}
+
+// ─────────────────────────────────────────────
+// Workflow Engine
+// ─────────────────────────────────────────────
+
+model Workflow {
+  id            String           @id @default(cuid())
+  name          String
+  description   String?
+  triggerType   TriggerType      @default(MANUAL)
+  triggerConfig Json             @default("{}")
+  status        WorkflowStatus   @default(DRAFT)
+  category      String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  tenantId      String
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  steps         WorkflowStep[]
+
+  @@index([tenantId])
+}
+
+model WorkflowStep {
+  id            String       @id @default(cuid())
+  order         Int
+  name          String
+  type          StepType
+  config        Json         @default("{}")
+  agentId       String?      // optional: which agent runs this step
+  createdAt     DateTime     @default(now())
+
+  workflowId    String
+  workflow      Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+}
+
+// ─────────────────────────────────────────────
+// Integration Layer
+// ─────────────────────────────────────────────
+
+model Integration {
+  id              String            @id @default(cuid())
+  name            String
+  type            IntegrationType
+  provider        String            // e.g., "stripe", "slack", "postgresql"
+  config          Json              @default("{}")   // encrypted connection details
+  status          IntegrationStatus @default(DISCONNECTED)
+  lastSyncAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// Security & Billing
+// ─────────────────────────────────────────────
+
+model ApiKey {
+  id            String       @id @default(cuid())
+  name          String
+  keyHash       String       @unique    // hashed key
+  prefix        String                   // first 8 chars for identification
+  status        ApiKeyStatus @default(ACTIVE)
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  createdAt     DateTime     @default(now())
+
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([keyHash])
+}
+
+model AuditLog {
+  id            String     @id @default(cuid())
+  action        String     // e.g., "agent.execute", "workflow.trigger"
+  resource      String     // what was acted upon
+  details       Json?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime   @default(now())
+
+  tenantId      String
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?      @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Subscription {
+  id            String     @id @default(cuid())
+  plan          PlanType   @default(STARTER)
+  status        SubStatus  @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  agentLimit    Int        @default(3)
+  executionLimit Int       @default(10000)
+  priceMonthly  Float
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  tenantId      String     @unique
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id            String       @id @default(cuid())
+  severity      Severity     @default(INFO)
+  title         String
+  description   String?      @db.Text
+  source        String       // which agent/system generated it
+  acknowledged  Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum PlanType {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  DEVELOPER
+  ANALYST
+  VIEWER
+}
+
+enum AgentType {
+  FRAUD_MONITORING
+  COMPLIANCE
+  REPORTING
+  FINANCE
+  CUSTOMER_SUPPORT
+  DATA_ANALYST
+  WORKFLOW_AUTOMATION
+  DOCUMENT_PROCESSING
+  EMAIL_COMMUNICATION
+  OPERATIONS
+}
+
+enum AgentStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+  ERROR
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TriggerType {
+  MANUAL
+  SCHEDULED
+  WEBHOOK
+  EVENT
+  REALTIME
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum StepType {
+  TRIGGER
+  AGENT
+  CONDITION
+  ACTION
+  INTEGRATION
+  NOTIFICATION
+}
+
+enum IntegrationType {
+  REST_API
+  DATABASE
+  PAYMENT
+  IDENTITY
+  MESSAGING
+  WEBHOOK
+  FILE_PROCESSING
+  CLOUD_SERVICE
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  SYNCING
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum SubStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+enum Severity {
+  INFO
+  WARNING
+  CRITICAL
+}
