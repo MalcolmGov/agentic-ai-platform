@@ -1,6 +1,6 @@
 "use client";
 
-import { AgentIcon, ArrowTrendUpIcon, ExclamationTriangleIcon, CpuIcon, KeyIcon } from "@/components/icons";
+import { AgentIcon, ArrowTrendUpIcon, ExclamationTriangleIcon, CpuIcon, KeyIcon, WorkflowIcon, UsersIcon, AnalyticsIcon } from "@/components/icons";
 
 // ─── Sparkline SVG Component ───────────────
 function Sparkline({ data, color, height = 32, width = 80 }: { data: number[]; color: string; height?: number; width?: number }) {
@@ -12,12 +12,12 @@ function Sparkline({ data, color, height = 32, width = 80 }: { data: number[]; c
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
       <defs>
-        <linearGradient id={`sparkGrad-${color}`} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`sparkGrad-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.3" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polygon points={fillPoints} fill={`url(#sparkGrad-${color})`} />
+      <polygon points={fillPoints} fill={`url(#sparkGrad-${color.replace("#", "")})`} />
       <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -53,44 +53,61 @@ function DonutChart({ segments, size = 120 }: { segments: { label: string; value
   );
 }
 
+// ─── SVG Icon Helper ──────────────────────
+function GradientIcon({ gradient, children }: { gradient: string; children: React.ReactNode }) {
+  return (
+    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
+      {children}
+    </div>
+  );
+}
+
 // ─── Data ──────────────────────────────────
 
 const stats = [
   { label: "Active Agents", value: "13", change: "+4 this week", icon: AgentIcon, color: "from-electric-500 to-cyan-500", badge: "badge-active", sparkData: [5, 6, 7, 8, 8, 9, 10, 11, 10, 12, 11, 13], sparkColor: "#3b82f6" },
   { label: "Executions Today", value: "2,847", change: "+18.3%", icon: CpuIcon, color: "from-emerald-500 to-emerald-400", badge: "badge-active", sparkData: [180, 220, 320, 480, 420, 560, 680, 750, 820, 920, 1100, 1400], sparkColor: "#10b981" },
-  { label: "Active Alerts", value: "4", change: "2 critical", icon: ExclamationTriangleIcon, color: "from-amber-500 to-amber-400", badge: "badge-warning", sparkData: [12, 9, 11, 8, 7, 6, 5, 7, 6, 4, 5, 4], sparkColor: "#f59e0b" },
-  { label: "API Calls (24h)", value: "47.8K", change: "+24.1%", icon: KeyIcon, color: "from-violet-500 to-violet-400", badge: "badge-info", sparkData: [12, 18, 22, 28, 32, 35, 38, 40, 42, 44, 46, 48], sparkColor: "#8b5cf6" },
+  { label: "Success Rate", value: "98.7%", change: "+0.4%", icon: ArrowTrendUpIcon, color: "from-violet-500 to-violet-400", badge: "badge-active", sparkData: [97.1, 97.5, 97.8, 98.0, 97.9, 98.2, 98.1, 98.4, 98.3, 98.5, 98.6, 98.7], sparkColor: "#8b5cf6" },
+  { label: "Cost Savings", value: "$4,250", change: "/day", icon: KeyIcon, color: "from-amber-500 to-amber-400", badge: "badge-info", sparkData: [2800, 3100, 3300, 3500, 3400, 3700, 3900, 4000, 4100, 4050, 4200, 4250], sparkColor: "#f59e0b" },
+];
+
+const roiMetrics = [
+  { label: "Monthly ROI", value: "3,200%", color: "text-emerald-400" },
+  { label: "FTEs Replaced", value: "8.4", color: "text-electric-400" },
+  { label: "Annual Savings", value: "$1.53M", color: "text-violet-400" },
+  { label: "Avg Response", value: "340ms", color: "text-cyan-400" },
+  { label: "Agent Uptime", value: "99.97%", color: "text-emerald-400" },
 ];
 
 const hourlyActivity = [35, 22, 18, 15, 12, 28, 55, 120, 180, 210, 195, 240, 220, 190, 175, 210, 250, 280, 260, 220, 180, 145, 110, 75];
 
 const agentPerformance = [
-  { name: "Fraud Monitoring", icon: "🛡️", executions: 487, success: 99.4, avgTime: "4.2s", trend: "+12%", color: "from-rose-500 to-orange-500", sparkData: [30, 35, 42, 38, 45, 50, 48, 55, 60, 58, 62, 65] },
-  { name: "IT Helpdesk", icon: "🎫", executions: 342, success: 97.8, avgTime: "1.2s", trend: "+28%", color: "from-cyan-500 to-blue-500", sparkData: [15, 20, 25, 30, 28, 35, 40, 38, 45, 48, 50, 55] },
-  { name: "Review Agent", icon: "📱", executions: 298, success: 98.6, avgTime: "2.3s", trend: "+45%", color: "from-pink-500 to-rose-500", sparkData: [8, 12, 18, 22, 28, 32, 35, 38, 40, 42, 45, 48] },
-  { name: "Competitive Intel", icon: "🔍", executions: 156, success: 99.1, avgTime: "7.8s", trend: "+8%", color: "from-amber-500 to-red-500", sparkData: [10, 12, 11, 14, 13, 15, 14, 16, 15, 17, 16, 18] },
-  { name: "Compliance", icon: "⚖️", executions: 412, success: 99.7, avgTime: "12.8s", trend: "+15%", color: "from-violet-500 to-indigo-500", sparkData: [25, 28, 32, 30, 35, 38, 36, 40, 42, 44, 46, 48] },
-  { name: "Support Agent", icon: "💬", executions: 524, success: 96.2, avgTime: "3.8s", trend: "+22%", color: "from-sky-500 to-cyan-500", sparkData: [30, 35, 38, 42, 40, 45, 48, 50, 52, 55, 58, 62] },
+  { name: "Fraud Monitoring", initials: "FM", executions: 524, success: 99.4, avgTime: "4.2s", trend: "+12%", color: "from-rose-500 to-orange-500", textColor: "text-rose-400", sparkData: [30, 35, 42, 38, 45, 50, 48, 55, 60, 58, 62, 65] },
+  { name: "Support Agent", initials: "SA", executions: 487, success: 96.2, avgTime: "3.8s", trend: "+22%", color: "from-sky-500 to-cyan-500", textColor: "text-sky-400", sparkData: [30, 35, 38, 42, 40, 45, 48, 50, 52, 55, 58, 62] },
+  { name: "Compliance", initials: "CO", executions: 412, success: 99.7, avgTime: "12.8s", trend: "+15%", color: "from-violet-500 to-indigo-500", textColor: "text-violet-400", sparkData: [25, 28, 32, 30, 35, 38, 36, 40, 42, 44, 46, 48] },
+  { name: "IT Helpdesk", initials: "HD", executions: 342, success: 97.8, avgTime: "1.2s", trend: "+28%", color: "from-cyan-500 to-blue-500", textColor: "text-cyan-400", sparkData: [15, 20, 25, 30, 28, 35, 40, 38, 45, 48, 50, 55] },
+  { name: "Review Agent", initials: "RA", executions: 298, success: 98.6, avgTime: "2.3s", trend: "+45%", color: "from-pink-500 to-rose-500", textColor: "text-pink-400", sparkData: [8, 12, 18, 22, 28, 32, 35, 38, 40, 42, 45, 48] },
+  { name: "Competitive Intel", initials: "CI", executions: 156, success: 99.1, avgTime: "7.8s", trend: "+8%", color: "from-amber-500 to-red-500", textColor: "text-amber-400", sparkData: [10, 12, 11, 14, 13, 15, 14, 16, 15, 17, 16, 18] },
 ];
 
 const donutSegments = [
+  { label: "Support", value: 524, color: "#0ea5e9" },
   { label: "Fraud", value: 487, color: "#f43f5e" },
+  { label: "Compliance", value: 412, color: "#8b5cf6" },
   { label: "Helpdesk", value: 342, color: "#06b6d4" },
   { label: "Reviews", value: 298, color: "#ec4899" },
-  { label: "Compliance", value: 412, color: "#8b5cf6" },
-  { label: "Support", value: 524, color: "#0ea5e9" },
   { label: "Others", value: 784, color: "#6366f1" },
 ];
 
 const recentExecutions = [
-  { agent: "Fraud Monitoring", icon: "🛡️", status: "completed", time: "2 min ago", duration: "4.2s", result: "3 alerts generated — $48.5K wire flagged", gradient: "from-rose-500 to-orange-500" },
-  { agent: "IT Helpdesk", icon: "🎫", status: "completed", time: "4 min ago", duration: "1.2s", result: "TKT-4001 auto-resolved — password reset", gradient: "from-cyan-500 to-blue-500" },
-  { agent: "Review Agent", icon: "📱", status: "completed", time: "6 min ago", duration: "8.7s", result: "47 reviews processed — 3 escalated to support", gradient: "from-pink-500 to-rose-500" },
-  { agent: "Competitive Intel", icon: "🔍", status: "completed", time: "12 min ago", duration: "7.8s", result: "NexaFlow $42M Series B detected — alert sent", gradient: "from-amber-500 to-red-500" },
-  { agent: "Compliance", icon: "⚖️", status: "running", time: "Just now", duration: "—", result: "Processing KYC batch — 8/12 screened", gradient: "from-violet-500 to-indigo-500" },
-  { agent: "Finance Agent", icon: "💰", status: "completed", time: "18 min ago", duration: "6.4s", result: "1,247 transactions reconciled — $3.89M", gradient: "from-amber-500 to-yellow-500" },
-  { agent: "Support Agent", icon: "💬", status: "failed", time: "25 min ago", duration: "1.2s", result: "API timeout — auto-retry scheduled in 5 min", gradient: "from-sky-500 to-cyan-500" },
-  { agent: "Reporting Agent", icon: "📊", status: "completed", time: "30 min ago", duration: "8.1s", result: "Q1 executive report generated — 12 charts", gradient: "from-emerald-500 to-teal-500" },
+  { agent: "Fraud Monitoring", initials: "FM", status: "completed", time: "2 min ago", duration: "4.2s", result: "3 alerts generated — $48.5K wire flagged", gradient: "from-rose-500 to-orange-500" },
+  { agent: "IT Helpdesk", initials: "HD", status: "completed", time: "4 min ago", duration: "1.2s", result: "TKT-4001 auto-resolved — password reset", gradient: "from-cyan-500 to-blue-500" },
+  { agent: "Review Agent", initials: "RA", status: "completed", time: "6 min ago", duration: "8.7s", result: "47 reviews processed — 3 escalated to support", gradient: "from-pink-500 to-rose-500" },
+  { agent: "Competitive Intel", initials: "CI", status: "completed", time: "12 min ago", duration: "7.8s", result: "NexaFlow $42M Series B detected — alert sent", gradient: "from-amber-500 to-red-500" },
+  { agent: "Compliance", initials: "CO", status: "running", time: "Just now", duration: "—", result: "Processing KYC batch — 8/12 screened", gradient: "from-violet-500 to-indigo-500" },
+  { agent: "Finance Agent", initials: "FA", status: "completed", time: "18 min ago", duration: "6.4s", result: "1,247 transactions reconciled — $3.89M", gradient: "from-amber-500 to-yellow-500" },
+  { agent: "Support Agent", initials: "SA", status: "failed", time: "25 min ago", duration: "1.2s", result: "API timeout — auto-retry scheduled in 5 min", gradient: "from-sky-500 to-cyan-500" },
+  { agent: "Reporting Agent", initials: "RG", status: "completed", time: "30 min ago", duration: "8.1s", result: "Q1 executive report generated — 12 charts", gradient: "from-emerald-500 to-teal-500" },
 ];
 
 const systemHealth = [
@@ -100,6 +117,13 @@ const systemHealth = [
   { name: "Job Scheduler", status: "operational", uptime: 99.92, load: 45 },
   { name: "Webhook Dispatcher", status: "degraded", uptime: 98.20, load: 89 },
   { name: "Redis Cache", status: "operational", uptime: 99.99, load: 18 },
+];
+
+const quickActions = [
+  { label: "Deploy Agent", icon: AgentIcon, gradient: "from-electric-500 to-cyan-500" },
+  { label: "Create Workflow", icon: WorkflowIcon, gradient: "from-violet-500 to-purple-500" },
+  { label: "View Reports", icon: AnalyticsIcon, gradient: "from-emerald-500 to-teal-500" },
+  { label: "Invite Team", icon: UsersIcon, gradient: "from-amber-500 to-orange-500" },
 ];
 
 // ─── Page ──────────────────────────────────
@@ -113,12 +137,24 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
-          <p className="text-text-secondary mt-1">Real-time monitoring across 13 autonomous agents</p>
+          <p className="text-text-secondary mt-1 text-sm">Real-time monitoring across 13 autonomous agents</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs text-text-muted">Live — last updated 12s ago</span>
         </div>
+      </div>
+
+      {/* ═══ Quick Actions ═══ */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {quickActions.map((action) => (
+          <button key={action.label} className="group glass-card p-4 flex items-center gap-3 hover:-translate-y-1 hover:shadow-[0_12px_40px_-10px_rgba(59,130,246,0.12)] transition-all duration-300 cursor-pointer text-left">
+            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+              <action.icon className="w-4.5 h-4.5 text-white" />
+            </div>
+            <span className="text-sm font-medium text-text-secondary group-hover:text-text-primary transition-colors">{action.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* ═══ KPI Cards with Sparklines ═══ */}
@@ -129,11 +165,11 @@ export default function DashboardPage() {
             <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${stat.color} opacity-50 group-hover:opacity-100 transition-opacity`} />
             {/* Glow */}
             <div className={`absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-br ${stat.color} rounded-full blur-3xl opacity-0 group-hover:opacity-[0.06] transition-opacity duration-700`} />
-            
+
             <div className="relative flex items-start justify-between mb-3">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
+              <GradientIcon gradient={stat.color}>
                 <stat.icon className="w-5 h-5 text-white" />
-              </div>
+              </GradientIcon>
               <span className={`badge ${stat.badge} text-[10px]`}>
                 <ArrowTrendUpIcon className="w-3 h-3" />
                 {stat.change}
@@ -152,6 +188,19 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* ═══ ROI Summary Bar ═══ */}
+      <div className="relative overflow-hidden glass-card p-5">
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-electric-500 via-violet-500 to-emerald-500 opacity-40" />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          {roiMetrics.map((metric) => (
+            <div key={metric.label} className="text-center">
+              <div className={`text-2xl font-bold ${metric.color}`}>{metric.value}</div>
+              <div className="text-[11px] text-text-muted mt-0.5">{metric.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ═══ Row 2: Activity Chart + Agent Breakdown Donut ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Activity Chart */}
@@ -167,35 +216,31 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          {/* SVG Bar Chart — immune to hydration issues */}
           <svg viewBox="0 0 720 200" className="w-full h-52" preserveAspectRatio="none">
             <defs>
               <linearGradient id="barHigh" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#059669" /><stop offset="100%" stopColor="#34d399" /></linearGradient>
               <linearGradient id="barMid" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#2563eb" /><stop offset="100%" stopColor="#60a5fa" /></linearGradient>
               <linearGradient id="barLow" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#4f46e5" /><stop offset="100%" stopColor="#818cf8" /></linearGradient>
             </defs>
-            {/* Grid lines */}
             {[0, 50, 100, 150].map(y => (
               <line key={y} x1="0" y1={y} x2="720" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
             ))}
-            {/* Bars */}
             {hourlyActivity.map((val, i) => {
               const barH = (val / maxHourly) * 190;
               const pct = (val / maxHourly) * 100;
               const fill = pct > 70 ? "url(#barHigh)" : pct > 40 ? "url(#barMid)" : "url(#barLow)";
               const barW = 720 / hourlyActivity.length - 3;
               const x = i * (720 / hourlyActivity.length) + 1.5;
-              return <rect key={i} x={x} y={200 - barH} width={barW} height={barH} fill={fill} rx="2" />;
+              return <rect key={i} x={x} y={200 - barH} width={barW} height={barH} fill={fill} rx="3" />;
             })}
           </svg>
           <div className="flex justify-between mt-1.5 text-[9px] text-text-muted">
             <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>Now</span>
           </div>
-          {/* Mini stats under chart */}
           <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
             {[
               { label: "Peak Hour", value: "17:00", sub: "280 executions", color: "text-emerald-400" },
-              { label: "Avg / Hour", value: "118.6", sub: "±42 std dev", color: "text-electric-400" },
+              { label: "Avg / Hour", value: "118.6", sub: "across all agents", color: "text-electric-400" },
               { label: "Throughput", value: "98.7%", sub: "success rate", color: "text-violet-400" },
             ].map(m => (
               <div key={m.label} className="text-center">
@@ -211,19 +256,19 @@ export default function DashboardPage() {
         <div className="glass-card p-6">
           <h2 className="text-base font-semibold text-text-primary mb-1">Agent Breakdown</h2>
           <p className="text-xs text-text-muted mb-4">Executions by agent type today</p>
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-5">
             <DonutChart segments={donutSegments} size={140} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {donutSegments.map(seg => (
               <div key={seg.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: seg.color }} />
                   <span className="text-xs text-text-secondary">{seg.label}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span className="text-xs font-semibold text-text-primary">{seg.value}</span>
-                  <span className="text-[9px] text-text-muted">{((seg.value / donutSegments.reduce((s, d) => s + d.value, 0)) * 100).toFixed(1)}%</span>
+                  <span className="text-[9px] text-text-muted w-10 text-right">{((seg.value / donutSegments.reduce((s, d) => s + d.value, 0)) * 100).toFixed(1)}%</span>
                 </div>
               </div>
             ))}
@@ -231,7 +276,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ═══ Row 3: Agent Performance Grid ═══ */}
+      {/* ═══ Agent Performance Grid ═══ */}
       <div>
         <h2 className="text-base font-semibold text-text-primary mb-3">Agent Performance</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -244,15 +289,18 @@ export default function DashboardPage() {
 
               <div className="relative flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${agent.color} flex items-center justify-center text-lg shadow-lg group-hover:scale-110 transition-transform duration-300`} style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.3)" }}>
-                    {agent.icon}
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${agent.color} flex items-center justify-center text-xs font-bold text-white shadow-lg group-hover:scale-110 transition-transform duration-300`} style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.3)" }}>
+                    {agent.initials}
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-text-primary">{agent.name}</div>
                     <div className="text-[10px] text-text-muted">{agent.executions.toLocaleString()} executions</div>
                   </div>
                 </div>
-                <span className="badge badge-active text-[9px]">{agent.trend}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-text-muted/50">#{i + 1}</span>
+                  <span className="badge badge-active text-[9px]">{agent.trend}</span>
+                </div>
               </div>
 
               {/* Success rate bar */}
@@ -278,7 +326,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ═══ Row 4: Recent Executions + System Health ═══ */}
+      {/* ═══ Recent Executions + System Health ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Recent Executions */}
         <div className="lg:col-span-2 glass-card overflow-hidden">
@@ -293,9 +341,9 @@ export default function DashboardPage() {
           </div>
           <div className="divide-y divide-white/[0.03]">
             {recentExecutions.map((exec, i) => (
-              <div key={i} className="px-5 py-3.5 flex items-center gap-4 hover:bg-white/[0.02] transition-colors">
-                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${exec.gradient} flex items-center justify-center text-base shrink-0 shadow-lg`} style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
-                  {exec.icon}
+              <div key={i} className={`px-5 py-3.5 flex items-center gap-4 hover:bg-white/[0.02] transition-colors ${i % 2 === 0 ? "bg-white/[0.01]" : ""}`}>
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${exec.gradient} flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-lg`} style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
+                  {exec.initials}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -333,11 +381,11 @@ export default function DashboardPage() {
                     <span className={`w-2 h-2 rounded-full ${svc.status === "operational" ? "bg-emerald-400" : "bg-amber-400"} ${svc.status === "operational" ? "" : "animate-pulse"}`} />
                     <span className="text-xs font-medium text-text-primary">{svc.name}</span>
                   </div>
-                  <span className="text-[10px] font-mono text-text-secondary">{svc.uptime}%</span>
+                  <span className={`text-[10px] font-mono ${svc.uptime >= 99.9 ? "text-emerald-400" : svc.uptime >= 99.0 ? "text-amber-400" : "text-rose-400"}`}>{svc.uptime}%</span>
                 </div>
                 {/* Load bar */}
-                <div className="h-1 rounded-full bg-navy-900 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-700 ${svc.load > 80 ? "bg-rose-500" : svc.load > 50 ? "bg-amber-500" : "bg-emerald-500"}`}
+                <div className="h-1.5 rounded-full bg-navy-900 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-700 ${svc.load > 80 ? "bg-gradient-to-r from-rose-500 to-red-400" : svc.load > 50 ? "bg-gradient-to-r from-amber-500 to-yellow-400" : "bg-gradient-to-r from-emerald-500 to-teal-400"}`}
                     style={{ width: `${svc.load}%` }} />
                 </div>
                 <div className="flex items-center justify-between mt-1">
