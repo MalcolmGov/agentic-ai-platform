@@ -22,12 +22,16 @@ export async function GET(req: NextRequest) {
   if (view === "health") {
     const check = engine.check();
     const statusCode = check.status === "unhealthy" ? 503 : 200;
+    const dbConfigured = !!process.env.DATABASE_URL &&
+      process.env.DATABASE_URL.startsWith('postgresql') &&
+      !process.env.DATABASE_URL.includes('password@localhost');
     return NextResponse.json({
       status: check.status,
       version: check.version,
       timestamp: check.timestamp,
       uptime: { seconds: check.uptime, human: formatUptime(check.uptime) },
       environment: process.env.NODE_ENV || "development",
+      storageMode: dbConfigured ? "database" : "memory",
       services: check.services,
       metrics: check.metrics,
     }, { status: statusCode });

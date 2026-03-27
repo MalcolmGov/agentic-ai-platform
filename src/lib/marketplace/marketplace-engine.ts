@@ -84,6 +84,10 @@ export interface InstallRecord {
   installedAt: number;
 }
 
+import { syncToDb, isPersistenceEnabled, type SyncConfig } from '@/lib/db/persistence-sync';
+
+const LISTING_SYNC: SyncConfig = { model: 'marketplaceListing', excludeFields: ['author', 'agentConfig', 'stats', 'reviews'] };
+
 // ─── Engine ────────────────────────────────
 
 export class MarketplaceEngine {
@@ -130,7 +134,27 @@ export class MarketplaceEngine {
     };
 
     this.listings.set(listing.id, listing);
+    this.syncListing(listing);
     return listing;
+  }
+
+  private syncListing(listing: MarketplaceListing): void {
+    if (!isPersistenceEnabled()) return;
+    syncToDb(LISTING_SYNC, listing.id, {
+      name: listing.name,
+      description: listing.description,
+      category: listing.category,
+      tags: listing.tags,
+      authorTenantId: listing.author.tenantId,
+      version: listing.version,
+      pricing: listing.pricing,
+      rating: listing.stats.avgRating,
+      installCount: listing.stats.installs,
+      status: listing.status,
+      config: listing.agentConfig,
+      createdAt: new Date(listing.createdAt),
+      updatedAt: new Date(listing.updatedAt),
+    }).catch(() => { /* non-blocking */ });
   }
 
   /**

@@ -1,63 +1,87 @@
 /**
  * Environment Configuration
- * 
- * Centralized, type-safe access to all environment variables.
- * Fails fast on missing required values in production.
+ *
+ * Validates and exports typed environment variables.
+ * Separates required vs optional vars for graceful degradation.
  */
 
-function required(key: string, defaultValue?: string): string {
-  const value = process.env[key] || defaultValue;
-  if (!value && process.env.NODE_ENV === "production") {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value || "";
-}
+// ─── Database ────────────────────────────────
 
-function optional(key: string, defaultValue = ""): string {
-  return process.env[key] || defaultValue;
-}
+/** True when a real PostgreSQL connection string is configured */
+export const hasDatabaseUrl = (): boolean => {
+  const url = process.env.DATABASE_URL;
+  return !!url && !url.includes('password@localhost') && url.startsWith('postgresql');
+};
+
+/** Storage mode: 'database' when Prisma is connected, 'memory' for demo/dev */
+export type StorageMode = 'database' | 'memory';
+
+export const getStorageMode = (): StorageMode => {
+  if (process.env.FORCE_MEMORY_MODE === 'true') return 'memory';
+  return hasDatabaseUrl() ? 'database' : 'memory';
+};
+
+// ─── Auth ────────────────────────────────────
+
+export const getJwtSecret = (): string =>
+  process.env.JWT_SECRET || 'dev-secret-do-not-use-in-production';
+
+export const getJwtExpiry = (): string =>
+  process.env.JWT_EXPIRY || '24h';
+
+export const getBcryptRounds = (): number =>
+  parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
+
+// ─── App ─────────────────────────────────────
+
+export const getAppUrl = (): string =>
+  process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+export const isProduction = (): boolean =>
+  process.env.NODE_ENV === 'production';
+
+export const getEncryptionKey = (): string =>
+  process.env.ENCRYPTION_KEY || 'dev-key-32-chars-do-not-use!!!!!';
+
+// ─── External Services ───────────────────────
+
+export const getRedisUrl = (): string | null =>
+  process.env.REDIS_URL || null;
+
+export const getOpenAiKey = (): string | null =>
+  process.env.OPENAI_API_KEY || null;
+
+export const getAnthropicKey = (): string | null =>
+  process.env.ANTHROPIC_API_KEY || null;
+
+export const getStripeSecret = (): string | null =>
+  process.env.STRIPE_SECRET_KEY || null;
+
+export const getStripeWebhookSecret = (): string | null =>
+  process.env.STRIPE_WEBHOOK_SECRET || null;
+
+// ─── Feature Flags ───────────────────────────
+
+export const isFeatureEnabled = (feature: string): boolean => {
+  const key = `FEATURE_${feature.toUpperCase()}`;
+  return process.env[key] === 'true';
+};
+
+// ─── Legacy env object (consumed by existing modules) ──
 
 export const env = {
-  // Database
-  DATABASE_URL: required("DATABASE_URL", "postgresql://postgres:password@localhost:5432/agentic_ai_platform"),
-
-  // Auth
-  JWT_SECRET: required("JWT_SECRET", "dev_jwt_secret_change_in_production_at_least_64_chars_long_abcdef123456"),
-  JWT_EXPIRY: optional("JWT_EXPIRY", "24h"),
-  BCRYPT_SALT_ROUNDS: parseInt(optional("BCRYPT_SALT_ROUNDS", "12")),
-
-  // LLM
-  OPENAI_API_KEY: optional("OPENAI_API_KEY"),
-  ANTHROPIC_API_KEY: optional("ANTHROPIC_API_KEY"),
-
-  // Vector DB
-  PINECONE_API_KEY: optional("PINECONE_API_KEY"),
-  PINECONE_INDEX: optional("PINECONE_INDEX"),
-
-  // Redis
-  REDIS_URL: optional("REDIS_URL", "redis://localhost:6379"),
-
-  // Storage
-  S3_BUCKET: optional("S3_BUCKET"),
-  S3_REGION: optional("S3_REGION"),
-  S3_ACCESS_KEY: optional("S3_ACCESS_KEY"),
-  S3_SECRET_KEY: optional("S3_SECRET_KEY"),
-
-  // Email
-  SENDGRID_API_KEY: optional("SENDGRID_API_KEY"),
-  FROM_EMAIL: optional("FROM_EMAIL", "noreply@agenticai.com"),
-
-  // Billing
-  STRIPE_SECRET_KEY: optional("STRIPE_SECRET_KEY"),
-  STRIPE_WEBHOOK_SECRET: optional("STRIPE_WEBHOOK_SECRET"),
-
-  // App
-  APP_URL: optional("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
-  NODE_ENV: optional("NODE_ENV", "development"),
-  LOG_LEVEL: optional("LOG_LEVEL", "info"),
-  ENCRYPTION_KEY: required("ENCRYPTION_KEY", "dev_encryption_key_32_chars_!!"),
-
-  // Computed
-  get isProduction() { return this.NODE_ENV === "production"; },
-  get isDevelopment() { return this.NODE_ENV === "development"; },
-} as const;
+  get DATABASE_URL() { return process.env.DATABASE_URL || ''; },
+  get JWT_SECRET() { return getJwtSecret(); },
+  get JWT_EXPIRY() { return getJwtExpiry(); },
+  get BCRYPT_SALT_ROUNDS() { return getBcryptRounds(); },
+  get ENCRYPTION_KEY() { return getEncryptionKey(); },
+  get OPENAI_API_KEY() { return getOpenAiKey(); },
+  get ANTHROPIC_API_KEY() { return getAnthropicKey(); },
+  get STRIPE_SECRET_KEY() { return getStripeSecret(); },
+  get STRIPE_WEBHOOK_SECRET() { return getStripeWebhookSecret(); },
+  get REDIS_URL() { return getRedisUrl(); },
+  get APP_URL() { return getAppUrl(); },
+  get SENDGRID_API_KEY() { return process.env.SENDGRID_API_KEY || null; },
+  get FROM_EMAIL() { return process.env.FROM_EMAIL || 'noreply@agenticai.com'; },
+  get NODE_ENV() { return process.env.NODE_ENV || 'development'; },
+};

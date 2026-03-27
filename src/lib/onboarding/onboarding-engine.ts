@@ -5,6 +5,8 @@
  * plan-based limits, and guided setup checklists.
  */
 
+import { syncToDb, hydrateFromDb, isPersistenceEnabled, type SyncConfig } from '@/lib/db/persistence-sync';
+
 // ─── Types ─────────────────────────────────
 
 export type PlanTier = "starter" | "professional" | "enterprise";
@@ -167,6 +169,7 @@ export class OnboardingEngine {
 
     this.tenants.set(tenantId, tenant);
     this.emailIndex.set(req.ownerEmail, tenantId);
+    this.syncTenantToDb(tenant);
 
     return { tenant, apiKey: rawKey };
   }
@@ -285,6 +288,7 @@ export class OnboardingEngine {
     tenant.plan = newPlan;
     tenant.limits = PLAN_LIMITS[newPlan];
     tenant.updatedAt = Date.now();
+    this.syncTenantToDb(tenant);
     if (newPlan === "enterprise") {
       tenant.status = "active";
       tenant.trialEndsAt = null;
@@ -310,7 +314,66 @@ export class OnboardingEngine {
     return Array.from(this.tenants.values());
   }
 
+  /**
+   * Hydrate tenants from database on startup
+   */
+  async hydrate(): Promise<number> {
+    if (!isPersistenceEnabled()) return 0;
+    const records = await hydrateFromDb<any>({ model: 'tenant' });
+    for (const record of records) {
+      if (this.tenants.has(record.id)) continue;
+      const tenant: Tenant = {
+        id: record.id,
+        name: record.name,
+        slug: record.slug,
+        ownerEmail: '', // Not stored in DB
+        plan: record.plan.toLowerCase() as PlanTier,
+        status: record.status.toLowerCase() as any,
+        trialEndsAt: null,
+        limits: PLAN_LIMITS[record.plan.toLowerCase() as PlanTier] || PLAN_LIMITS.starter,
+        apiKeys: [],
+        onboarding: {
+          completedSteps: ['account_created'],
+          currentStep: 'api_key_generated',
+          percentComplete: 14,
+          startedAt: record.createdAt.getTime(),
+          completedAt: null,
+        },
+        settings: {
+          timezone: 'UTC',
+          locale: 'en-US',
+          notificationEmail: '',
+          webhookUrl: null,
+        },
+        createdAt: record.createdAt.getTime(),
+        updatedAt: record.updatedAt.getTime(),
+      };
+      this.tenants.set(tenant.id, tenant);
+    }
+    return records.length;
+  }
+
   // ─── Private ─────────────────────────────
+
+  private async syncTenantToDb(tenant: Tenant): Promise<void> {
+    if (!isPersistenceEnabled()) return;
+    try {
+      await syncToDb(
+        { model: 'tenant', excludeFields: [] },
+        tenant.id,
+        {
+          name: tenant.name,
+          slug: tenant.slug,
+          plan: tenant.plan.toUpperCase(),
+          status: tenant.status.toUpperCase(),
+          createdAt: new Date(tenant.createdAt),
+          updatedAt: new Date(tenant.updatedAt),
+        }
+      );
+    } catch {
+      // Non-blocking — in-memory is source of truth
+    }
+  }
 
   private advanceOnboarding(tenant: Tenant, step: OnboardingStep): OnboardingProgress {
     if (!tenant.onboarding.completedSteps.includes(step)) {

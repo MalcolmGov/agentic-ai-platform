@@ -51,6 +51,10 @@ const ROLE_PERMISSIONS: Record<TeamRole, string[]> = {
   viewer: ["agent:read", "billing:read"],
 };
 
+import { syncToDb, isPersistenceEnabled, type SyncConfig } from '@/lib/db/persistence-sync';
+
+const INVITE_SYNC: SyncConfig = { model: 'teamInvite', excludeFields: [] };
+
 // ─── Engine ────────────────────────────────
 
 export class TeamEngine {
@@ -93,6 +97,7 @@ export class TeamEngine {
       createdAt: Date.now(),
     };
     this.invites.push(invite);
+    this.syncInvite(invite);
     this.logActivity(params.tenantId, params.invitedBy, params.invitedBy, "invited", "team", `Invited ${params.email} as ${params.role}`);
     return invite;
   }
@@ -204,6 +209,20 @@ export class TeamEngine {
   }
 
   // ─── Private ─────────────────────────────
+
+  private syncInvite(invite: TeamInvite): void {
+    if (!isPersistenceEnabled()) return;
+    syncToDb(INVITE_SYNC, invite.id, {
+      tenantId: invite.tenantId,
+      email: invite.email,
+      role: invite.role,
+      token: invite.token,
+      invitedBy: invite.invitedBy,
+      expiresAt: new Date(invite.expiresAt),
+      createdAt: new Date(invite.createdAt),
+      updatedAt: new Date(invite.createdAt),
+    }).catch(() => { /* non-blocking */ });
+  }
 
   private logActivity(tenantId: string, memberId: string, memberEmail: string, action: string, resource: string, details: string): void {
     this.activities.push({

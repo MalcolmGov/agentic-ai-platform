@@ -212,6 +212,10 @@ const FRAMEWORK_CONTROLS: Record<ComplianceFramework, Array<{ id: string; name: 
   ],
 };
 
+import { syncToDb, isPersistenceEnabled, type SyncConfig } from '@/lib/db/persistence-sync';
+
+const MODEL_CARD_SYNC: SyncConfig = { model: 'governanceModelCard', excludeFields: ['agentName', 'modelProvider', 'modelName', 'taskType', 'intendedUse', 'limitations', 'ethicalConsiderations', 'trainingDataSummary', 'performanceMetrics', 'riskClassification'] };
+
 // ─── Governance Engine ─────────────────────
 
 export class GovernanceEngine {
@@ -272,6 +276,7 @@ export class GovernanceEngine {
     };
 
     this.modelCards.set(card.id, card);
+    this.syncModelCard(card);
     return card;
   }
 
@@ -527,6 +532,22 @@ export class GovernanceEngine {
     }
 
     return findings;
+  }
+
+  private syncModelCard(card: ModelCard): void {
+    if (!isPersistenceEnabled()) return;
+    syncToDb(MODEL_CARD_SYNC, card.id, {
+      agentId: card.agentId,
+      tenantId: card.tenantId,
+      modelType: card.modelName,
+      version: String(card.version),
+      biasAssessment: card.biasAssessment,
+      fairnessMetrics: card.biasAssessment.fairnessMetrics,
+      limitations: card.limitations,
+      status: 'draft',
+      createdAt: new Date(card.createdAt),
+      updatedAt: new Date(card.updatedAt),
+    }).catch(() => { /* non-blocking */ });
   }
 
   private generateRecommendations(controls: ComplianceControl[], framework: ComplianceFramework): string[] {

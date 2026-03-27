@@ -5,35 +5,40 @@
  * Wraps Prisma operations with typed, domain-specific methods.
  */
 
-import { prisma } from './prisma';
+import { getPrisma } from './prisma';
 
 // ─── Base Repository ──────────────────────────
 
 export class BaseRepository<T> {
   constructor(protected model: string) {}
 
+  protected get db() {
+    const client = getPrisma();
+    return (client as any)[this.model];
+  }
+
   async findById(id: string) {
-    return (prisma as any)[this.model].findUnique({ where: { id } });
+    return this.db.findUnique({ where: { id } });
   }
 
   async findMany(where: Record<string, any>, orderBy?: Record<string, any>) {
-    return (prisma as any)[this.model].findMany({ where, orderBy });
+    return this.db.findMany({ where, orderBy });
   }
 
   async create(data: Record<string, any>) {
-    return (prisma as any)[this.model].create({ data });
+    return this.db.create({ data });
   }
 
   async update(id: string, data: Record<string, any>) {
-    return (prisma as any)[this.model].update({ where: { id }, data });
+    return this.db.update({ where: { id }, data });
   }
 
   async delete(id: string) {
-    return (prisma as any)[this.model].delete({ where: { id } });
+    return this.db.delete({ where: { id } });
   }
 
   async count(where?: Record<string, any>) {
-    return (prisma as any)[this.model].count({ where });
+    return this.db.count({ where });
   }
 }
 
@@ -46,7 +51,7 @@ export class GovernanceRepository extends BaseRepository<any> {
 
   /** Find all model cards for a specific agent within a tenant */
   async findByAgent(agentId: string, tenantId: string) {
-    return (prisma as any).governanceModelCard.findMany({
+    return (getPrisma() as any).governanceModelCard.findMany({
       where: { agentId, tenantId },
       orderBy: { version: 'desc' },
     });
@@ -58,7 +63,7 @@ export class GovernanceRepository extends BaseRepository<any> {
     if (agentId) {
       where.agentId = agentId;
     }
-    return (prisma as any).decisionLineage.findMany({
+    return (getPrisma() as any).decisionLineage.findMany({
       where,
       orderBy: { timestamp: 'desc' },
       take: 100,
@@ -67,7 +72,7 @@ export class GovernanceRepository extends BaseRepository<any> {
 
   /** Create a compliance report for a given framework */
   async createComplianceReport(tenantId: string, framework: string, data: any) {
-    return (prisma as any).complianceReport.create({
+    return (getPrisma() as any).complianceReport.create({
       data: {
         tenantId,
         framework,
@@ -86,7 +91,7 @@ export class GovernanceRepository extends BaseRepository<any> {
 
   /** List all model cards belonging to a tenant */
   async findByTenant(tenantId: string) {
-    return (prisma as any).governanceModelCard.findMany({
+    return (getPrisma() as any).governanceModelCard.findMany({
       where: { tenantId },
       orderBy: { updatedAt: 'desc' },
     });
@@ -106,7 +111,7 @@ export class GovernanceRepository extends BaseRepository<any> {
     humanReviewRequired: boolean;
     complianceTags: string[];
   }) {
-    return (prisma as any).decisionLineage.create({ data });
+    return (getPrisma() as any).decisionLineage.create({ data });
   }
 
   /** Get compliance reports for a tenant, optionally filtered by framework */
@@ -115,7 +120,7 @@ export class GovernanceRepository extends BaseRepository<any> {
     if (framework) {
       where.framework = framework;
     }
-    return (prisma as any).complianceReport.findMany({
+    return (getPrisma() as any).complianceReport.findMany({
       where,
       orderBy: { generatedAt: 'desc' },
     });
@@ -155,7 +160,7 @@ export class MarketplaceRepository extends BaseRepository<any> {
       where.pricingType = filters.pricing;
     }
 
-    return (prisma as any).marketplaceListing.findMany({
+    return (getPrisma() as any).marketplaceListing.findMany({
       where,
       orderBy: { installs: 'desc' },
       take: 50,
@@ -164,7 +169,7 @@ export class MarketplaceRepository extends BaseRepository<any> {
 
   /** Get featured/top-rated published listings */
   async featured() {
-    return (prisma as any).marketplaceListing.findMany({
+    return (getPrisma() as any).marketplaceListing.findMany({
       where: { status: 'published' },
       orderBy: [
         { avgRating: 'desc' },
@@ -176,7 +181,7 @@ export class MarketplaceRepository extends BaseRepository<any> {
 
   /** Add a review to a listing and recalculate the average rating */
   async addReview(listingId: string, tenantId: string, rating: number, comment: string) {
-    const review = await (prisma as any).marketplaceReview.create({
+    const review = await (getPrisma() as any).marketplaceReview.create({
       data: {
         listingId,
         tenantId,
@@ -187,13 +192,13 @@ export class MarketplaceRepository extends BaseRepository<any> {
     });
 
     // Recalculate the listing's average rating
-    const aggregate = await (prisma as any).marketplaceReview.aggregate({
+    const aggregate = await (getPrisma() as any).marketplaceReview.aggregate({
       where: { listingId },
       _avg: { rating: true },
       _count: { rating: true },
     });
 
-    await (prisma as any).marketplaceListing.update({
+    await (getPrisma() as any).marketplaceListing.update({
       where: { id: listingId },
       data: {
         avgRating: Math.round((aggregate._avg.rating ?? 0) * 10) / 10,
@@ -206,7 +211,7 @@ export class MarketplaceRepository extends BaseRepository<any> {
 
   /** Record an install event and increment the install counter */
   async trackInstall(listingId: string, tenantId: string) {
-    const install = await (prisma as any).marketplaceInstall.create({
+    const install = await (getPrisma() as any).marketplaceInstall.create({
       data: {
         listingId,
         tenantId,
@@ -214,7 +219,7 @@ export class MarketplaceRepository extends BaseRepository<any> {
       },
     });
 
-    await (prisma as any).marketplaceListing.update({
+    await (getPrisma() as any).marketplaceListing.update({
       where: { id: listingId },
       data: {
         installs: { increment: 1 },
@@ -226,7 +231,7 @@ export class MarketplaceRepository extends BaseRepository<any> {
 
   /** Get listings published by a specific tenant */
   async findByAuthor(tenantId: string) {
-    return (prisma as any).marketplaceListing.findMany({
+    return (getPrisma() as any).marketplaceListing.findMany({
       where: { authorTenantId: tenantId },
       orderBy: { createdAt: 'desc' },
     });
@@ -234,7 +239,7 @@ export class MarketplaceRepository extends BaseRepository<any> {
 
   /** Get all installs for a tenant */
   async findInstalls(tenantId: string) {
-    return (prisma as any).marketplaceInstall.findMany({
+    return (getPrisma() as any).marketplaceInstall.findMany({
       where: { tenantId },
       orderBy: { installedAt: 'desc' },
       include: { listing: true },
@@ -251,7 +256,7 @@ export class TeamRepository extends BaseRepository<any> {
 
   /** Find all pending invites for a tenant */
   async findPendingInvites(tenantId: string) {
-    return (prisma as any).teamInvite.findMany({
+    return (getPrisma() as any).teamInvite.findMany({
       where: {
         tenantId,
         status: 'pending',
@@ -263,14 +268,14 @@ export class TeamRepository extends BaseRepository<any> {
 
   /** Look up an invite by its unique token */
   async findByToken(token: string) {
-    return (prisma as any).teamInvite.findUnique({
+    return (getPrisma() as any).teamInvite.findUnique({
       where: { token },
     });
   }
 
   /** Accept an invite: mark it accepted and create a team member record */
   async acceptInvite(token: string) {
-    const invite = await (prisma as any).teamInvite.findUnique({
+    const invite = await (getPrisma() as any).teamInvite.findUnique({
       where: { token },
     });
 
@@ -279,19 +284,19 @@ export class TeamRepository extends BaseRepository<any> {
     }
 
     if (new Date(invite.expiresAt) < new Date()) {
-      await (prisma as any).teamInvite.update({
+      await (getPrisma() as any).teamInvite.update({
         where: { id: invite.id },
         data: { status: 'expired' },
       });
       return null;
     }
 
-    const [updatedInvite] = await (prisma as any).$transaction([
-      (prisma as any).teamInvite.update({
+    const [updatedInvite] = await (getPrisma() as any).$transaction([
+      (getPrisma() as any).teamInvite.update({
         where: { id: invite.id },
         data: { status: 'accepted' },
       }),
-      (prisma as any).teamMember.create({
+      (getPrisma() as any).teamMember.create({
         data: {
           tenantId: invite.tenantId,
           email: invite.email,
@@ -307,7 +312,7 @@ export class TeamRepository extends BaseRepository<any> {
 
   /** Revoke a pending invite */
   async revokeInvite(inviteId: string) {
-    return (prisma as any).teamInvite.update({
+    return (getPrisma() as any).teamInvite.update({
       where: { id: inviteId },
       data: { status: 'revoked' },
     });
@@ -315,7 +320,7 @@ export class TeamRepository extends BaseRepository<any> {
 
   /** Get all members for a tenant */
   async findMembers(tenantId: string) {
-    return (prisma as any).teamMember.findMany({
+    return (getPrisma() as any).teamMember.findMany({
       where: { tenantId },
       orderBy: { joinedAt: 'asc' },
     });
@@ -323,7 +328,7 @@ export class TeamRepository extends BaseRepository<any> {
 
   /** Log a team activity entry */
   async logActivity(tenantId: string, memberId: string, memberEmail: string, action: string, resource: string, details: string) {
-    return (prisma as any).teamActivity.create({
+    return (getPrisma() as any).teamActivity.create({
       data: {
         tenantId,
         memberId,
@@ -338,7 +343,7 @@ export class TeamRepository extends BaseRepository<any> {
 
   /** Get recent activity for a tenant */
   async findActivity(tenantId: string, limit = 50) {
-    return (prisma as any).teamActivity.findMany({
+    return (getPrisma() as any).teamActivity.findMany({
       where: { tenantId },
       orderBy: { timestamp: 'desc' },
       take: limit,
@@ -359,7 +364,7 @@ export class NotificationRepository extends BaseRepository<any> {
     if (unreadOnly) {
       where.readAt = null;
     }
-    return (prisma as any).notification.findMany({
+    return (getPrisma() as any).notification.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: 100,
@@ -368,7 +373,7 @@ export class NotificationRepository extends BaseRepository<any> {
 
   /** Mark a single notification as read */
   async markRead(id: string) {
-    return (prisma as any).notification.update({
+    return (getPrisma() as any).notification.update({
       where: { id },
       data: { readAt: new Date() },
     });
@@ -376,7 +381,7 @@ export class NotificationRepository extends BaseRepository<any> {
 
   /** Mark all notifications as read for a user within a tenant */
   async markAllRead(userId: string, tenantId: string) {
-    return (prisma as any).notification.updateMany({
+    return (getPrisma() as any).notification.updateMany({
       where: { userId, tenantId, readAt: null },
       data: { readAt: new Date() },
     });
@@ -384,7 +389,7 @@ export class NotificationRepository extends BaseRepository<any> {
 
   /** Count unread notifications for a user */
   async unreadCount(userId: string, tenantId: string) {
-    return (prisma as any).notification.count({
+    return (getPrisma() as any).notification.count({
       where: { userId, tenantId, readAt: null },
     });
   }
@@ -399,7 +404,7 @@ export class WebhookRepository extends BaseRepository<any> {
 
   /** Find all active webhook subscriptions for a tenant */
   async findActive(tenantId: string) {
-    return (prisma as any).webhookSubscription.findMany({
+    return (getPrisma() as any).webhookSubscription.findMany({
       where: { tenantId, active: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -407,7 +412,7 @@ export class WebhookRepository extends BaseRepository<any> {
 
   /** Find all active subscriptions listening for a specific event */
   async findByEvent(event: string) {
-    return (prisma as any).webhookSubscription.findMany({
+    return (getPrisma() as any).webhookSubscription.findMany({
       where: {
         active: true,
         events: { has: event },
@@ -417,7 +422,7 @@ export class WebhookRepository extends BaseRepository<any> {
 
   /** Log a webhook delivery attempt */
   async logDelivery(subscriptionId: string, event: string, payload: any, status: string, responseCode?: number) {
-    return (prisma as any).webhookDelivery.create({
+    return (getPrisma() as any).webhookDelivery.create({
       data: {
         subscriptionId,
         event,
@@ -431,7 +436,7 @@ export class WebhookRepository extends BaseRepository<any> {
 
   /** Get the delivery log for a subscription */
   async getDeliveryLog(subscriptionId: string, limit = 50) {
-    return (prisma as any).webhookDelivery.findMany({
+    return (getPrisma() as any).webhookDelivery.findMany({
       where: { subscriptionId },
       orderBy: { attemptedAt: 'desc' },
       take: limit,
@@ -440,7 +445,7 @@ export class WebhookRepository extends BaseRepository<any> {
 
   /** Toggle a subscription's active state */
   async setActive(id: string, active: boolean) {
-    return (prisma as any).webhookSubscription.update({
+    return (getPrisma() as any).webhookSubscription.update({
       where: { id },
       data: { active },
     });
@@ -456,7 +461,7 @@ export class DriftRepository extends BaseRepository<any> {
 
   /** Find drift events for a specific agent within a tenant */
   async findByAgent(agentId: string, tenantId: string) {
-    return (prisma as any).driftEvent.findMany({
+    return (getPrisma() as any).driftEvent.findMany({
       where: { agentId, tenantId },
       orderBy: { detectedAt: 'desc' },
       take: 100,
@@ -465,7 +470,7 @@ export class DriftRepository extends BaseRepository<any> {
 
   /** Get the current baseline for an agent */
   async getBaseline(agentId: string, tenantId: string) {
-    return (prisma as any).driftBaseline.findMany({
+    return (getPrisma() as any).driftBaseline.findMany({
       where: { agentId, tenantId },
       orderBy: { updatedAt: 'desc' },
     });
@@ -473,7 +478,7 @@ export class DriftRepository extends BaseRepository<any> {
 
   /** Create or update a baseline metric for an agent */
   async setBaseline(agentId: string, tenantId: string, metric: string, value: number, threshold: number) {
-    return (prisma as any).driftBaseline.upsert({
+    return (getPrisma() as any).driftBaseline.upsert({
       where: {
         agentId_tenantId_metric: { agentId, tenantId, metric },
       },
@@ -496,7 +501,7 @@ export class DriftRepository extends BaseRepository<any> {
 
   /** Acknowledge a drift event */
   async acknowledge(eventId: string) {
-    return (prisma as any).driftEvent.update({
+    return (getPrisma() as any).driftEvent.update({
       where: { id: eventId },
       data: {
         acknowledged: true,
@@ -507,7 +512,7 @@ export class DriftRepository extends BaseRepository<any> {
 
   /** Find unacknowledged drift events for a tenant */
   async findUnacknowledged(tenantId: string) {
-    return (prisma as any).driftEvent.findMany({
+    return (getPrisma() as any).driftEvent.findMany({
       where: { tenantId, acknowledged: false },
       orderBy: { detectedAt: 'desc' },
     });
@@ -527,7 +532,7 @@ export class PromptVersionRepository extends BaseRepository<any> {
     if (branch) {
       where.branch = branch;
     }
-    return (prisma as any).promptVersion.findMany({
+    return (getPrisma() as any).promptVersion.findMany({
       where,
       orderBy: { version: 'desc' },
     });
@@ -539,7 +544,7 @@ export class PromptVersionRepository extends BaseRepository<any> {
     if (branch) {
       where.branch = branch;
     }
-    return (prisma as any).promptVersion.findFirst({
+    return (getPrisma() as any).promptVersion.findFirst({
       where,
       orderBy: { version: 'desc' },
     });
@@ -547,7 +552,7 @@ export class PromptVersionRepository extends BaseRepository<any> {
 
   /** Get a specific version of a prompt */
   async getByVersion(agentId: string, tenantId: string, version: number) {
-    return (prisma as any).promptVersion.findFirst({
+    return (getPrisma() as any).promptVersion.findFirst({
       where: { agentId, tenantId, version },
     });
   }
@@ -562,7 +567,7 @@ export class PromptVersionRepository extends BaseRepository<any> {
     const latest = await this.getLatest(agentId, tenantId, data.branch);
     const nextVersion = latest ? latest.version + 1 : 1;
 
-    return (prisma as any).promptVersion.create({
+    return (getPrisma() as any).promptVersion.create({
       data: {
         agentId,
         tenantId,
