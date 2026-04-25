@@ -1,0 +1,23 @@
+{
+  "name": "@swifter-ai/mobile-sdk",
+  "version": "0.1.0",
+  "description": "Swifter AI Mobile SDK — Embed AI agents in React Native, iOS, and Android apps",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.73.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-native": "^0.73.0"
+  },
+  "keywords": ["swifter-ai", "mobile-sdk", "react-native", "ai-agents", "africa"],
+  "license": "MIT"
+}

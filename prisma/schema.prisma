@@ -1,0 +1,1059 @@
+// Agentic AI Platform — Database Schema
+// Prisma Schema for PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Multi-Tenant Core
+// ─────────────────────────────────────────────
+
+model Tenant {
+  id        String       @id @default(cuid())
+  name      String
+  slug      String       @unique
+  industry  String?
+  plan      PlanType     @default(STARTER)
+  status    TenantStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  users        User[]
+  agents       Agent[]
+  workflows    Workflow[]
+  integrations Integration[]
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[]
+  alerts       Alert[]
+  subscription Subscription?
+
+  // Extended feature relations
+  governanceModelCards  GovernanceModelCard[]
+  governanceDecisions   GovernanceDecision[]
+  complianceReports     ComplianceReport[]
+  driftBaselines        DriftBaseline[]
+  driftEvents           DriftEvent[]
+  marketplaceListings   MarketplaceListing[]   @relation("MarketplaceListings")
+  marketplaceReviews    MarketplaceReview[]
+  marketplaceInstalls   MarketplaceInstall[]
+  orchestratedWorkflows OrchestratedWorkflow[]
+  promptVersions        PromptVersion[]
+  webhookSubscriptions  WebhookSubscription[]
+  teamInvites           TeamInvite[]
+  notifications         Notification[]
+  ssoConfig             SSOConfig?
+  whiteLabelConfig      WhiteLabelConfig?
+  onboardingProgress    OnboardingProgress?
+
+  // Market & deployment relations
+  markets          Market[]
+  appProperties    AppProperty[]
+  agentDeployments AgentDeployment[]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         UserRole   @default(VIEWER)
+  department   Department?
+  avatarUrl    String?
+  lastActiveAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
+
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// Agent System
+// ─────────────────────────────────────────────
+
+model Agent {
+  id           String      @id @default(cuid())
+  name         String
+  type         AgentType
+  description  String?
+  systemPrompt String?     @db.Text
+  config       Json        @default("{}")
+  llmProvider  String      @default("openai")
+  llmModel     String      @default("gpt-4o")
+  status       AgentStatus @default(INACTIVE)
+  schedule     String? // cron expression or "realtime"
+  tools            String[]   // list of tool IDs this agent can use
+  department       Department?
+  isTemplate       Boolean    @default(false)
+  templateCategory String?
+  createdAt        DateTime   @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tenantId   String
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  executions AgentExecution[]
+
+  // Extended feature relations
+  governanceModelCards GovernanceModelCard[]
+  governanceDecisions  GovernanceDecision[]
+  driftBaselines       DriftBaseline[]
+  driftEvents          DriftEvent[]
+  promptVersions       PromptVersion[]
+
+  @@index([tenantId])
+  @@index([type])
+}
+
+model AgentExecution {
+  id          String          @id @default(cuid())
+  status      ExecutionStatus @default(PENDING)
+  input       Json?
+  output      Json?
+  error       String?         @db.Text
+  durationMs  Int?
+  tokenUsage  Int?
+  costUsd     Float?
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([startedAt])
+}
+
+// ─────────────────────────────────────────────
+// Workflow Engine
+// ─────────────────────────────────────────────
+
+model Workflow {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  triggerType   TriggerType    @default(MANUAL)
+  triggerConfig Json           @default("{}")
+  status        WorkflowStatus @default(DRAFT)
+  category      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tenantId String
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  steps    WorkflowStep[]
+
+  @@index([tenantId])
+}
+
+model WorkflowStep {
+  id        String   @id @default(cuid())
+  order     Int
+  name      String
+  type      StepType
+  config    Json     @default("{}")
+  agentId   String? // optional: which agent runs this step
+  createdAt DateTime @default(now())
+
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+}
+
+// ─────────────────────────────────────────────
+// Integration Layer
+// ─────────────────────────────────────────────
+
+model Integration {
+  id         String            @id @default(cuid())
+  name       String
+  type       IntegrationType
+  provider   String // e.g., "stripe", "slack", "postgresql"
+  config     Json              @default("{}") // encrypted connection details
+  status     IntegrationStatus @default(DISCONNECTED)
+  lastSyncAt DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// Security & Billing
+// ─────────────────────────────────────────────
+
+model ApiKey {
+  id         String       @id @default(cuid())
+  name       String
+  keyHash    String       @unique // hashed key
+  prefix     String // first 8 chars for identification
+  status     ApiKeyStatus @default(ACTIVE)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime     @default(now())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([keyHash])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String // e.g., "agent.execute", "workflow.trigger"
+  resource  String // what was acted upon
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  tenantId String
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  plan               PlanType  @default(STARTER)
+  status             SubStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  agentLimit         Int       @default(3)
+  executionLimit     Int       @default(10000)
+  priceMonthly       Float
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id           String   @id @default(cuid())
+  severity     Severity @default(INFO)
+  title        String
+  description  String?  @db.Text
+  source       String // which agent/system generated it
+  acknowledged Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model AgentTemplate {
+  id               String     @id @default(cuid())
+  name             String
+  description      String     @db.Text
+  department       Department
+  agentType        AgentType
+  systemPrompt     String     @db.Text
+  defaultConfig    Json       @default("{}")
+  llmProvider      String     @default("openai")
+  llmModel         String     @default("gpt-4o-mini")
+  tools            String[]
+  difficulty       String     @default("beginner") // beginner, intermediate, advanced
+  estimatedSetup   Int        @default(5) // minutes
+  tags             String[]
+  icon             String?
+  published        Boolean    @default(true)
+  sortOrder        Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([department])
+  @@index([agentType])
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum PlanType {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  DEVELOPER
+  ANALYST
+  VIEWER
+}
+
+enum AgentType {
+  // HR Department
+  HR_ONBOARDING
+  HR_POLICY_QA
+  HR_LEAVE_ASSISTANT
+  HR_JOB_DESCRIPTION
+  HR_PERFORMANCE_REVIEW
+  // Legal Department
+  LEGAL_CONTRACT_REVIEW
+  LEGAL_POLICY_QA
+  LEGAL_NDA_CLASSIFIER
+  LEGAL_COMPLIANCE_CHECK
+  // Risk Department
+  RISK_ASSESSMENT
+  RISK_INCIDENT_REPORTER
+  RISK_FRAUD_MONITORING
+  // Security Department
+  SECURITY_ALERT_EXPLAINER
+  SECURITY_ACCESS_REVIEW
+  SECURITY_PHISHING_TRIAGE
+  // Compliance Department
+  COMPLIANCE_REGULATION_QA
+  COMPLIANCE_POLICY_CHECKER
+  COMPLIANCE_AUDIT_LOGGER
+  // QA Department
+  QA_TEST_CASE_GENERATOR
+  QA_BUG_TRIAGE
+  QA_REGRESSION_ANALYST
+  // Product Department
+  PRODUCT_FEEDBACK_SUMMARISER
+  PRODUCT_PRD_ASSISTANT
+  PRODUCT_ROADMAP_ANALYST
+  // Engineering Department
+  ENGINEERING_CODE_REVIEWER
+  ENGINEERING_RUNBOOK_ASSISTANT
+  ENGINEERING_INCIDENT_RESPONDER
+  // Finance Department
+  FINANCE_REPORTING
+  FINANCE_BUDGET_ANALYST
+  // Operations Department
+  OPERATIONS_WORKFLOW_AUTOMATION
+  OPERATIONS_DATA_ANALYST
+  // Marketing Department
+  MARKETING_CAMPAIGN_COPYWRITER
+  MARKETING_SOCIAL_MEDIA
+  MARKETING_SEO_OPTIMIZER
+  MARKETING_EMAIL_ANALYZER
+  MARKETING_BRAND_VOICE
+  // Data & Analytics Department
+  DATA_QUALITY_CHECKER
+  DATA_SQL_GENERATOR
+  DATA_INSIGHTS_SUMMARISER
+  DATA_ANOMALY_DETECTOR
+  DATA_REPORT_NARRATOR
+  // Infrastructure & Ops Department
+  INFRA_INCIDENT_TRIAGE
+  INFRA_CAPACITY_PLANNING
+  INFRA_CHANGE_ANALYZER
+  INFRA_SLA_MONITOR
+  INFRA_RUNBOOK_GENERATOR
+  // Customer Support Department
+  SUPPORT_TICKET_CLASSIFIER
+  SUPPORT_RESPONSE_DRAFTER
+  SUPPORT_ESCALATION
+  SUPPORT_KB_SEARCH
+  SUPPORT_SENTIMENT_ANALYZER
+  SUPPORT_LIVE_CHAT_HANDOFF
+  SUPPORT_CSAT_SURVEY
+  SUPPORT_CHURN_INTERVENTION
+  SUPPORT_WHATSAPP_BOT
+  // Chatbot & Voice Department
+  CHATBOT_WEBSITE_BUILDER
+  CHATBOT_HELPDESK_BOT
+  CHATBOT_WHATSAPP_BOT
+  CHATBOT_VOICE_IVR
+  CHATBOT_MEETING_SUMMARIZER
+  CHATBOT_LEAD_QUALIFIER
+  CHATBOT_FAQ_BUILDER
+  CHATBOT_SENTIMENT_BOT
+  // HR Expanded
+  HR_INTERVIEW_SCHEDULER
+  HR_PAYROLL_QUERY
+  HR_BENEFITS_ADVISOR
+  HR_EXIT_INTERVIEW
+  // Legal Expanded
+  LEGAL_GDPR_HANDLER
+  LEGAL_CONTRACT_GENERATOR
+  LEGAL_REGULATORY_MONITOR
+  LEGAL_LITIGATION_RISK
+  // Finance Expanded
+  FINANCE_INVOICE_PROCESSOR
+  FINANCE_EXPENSE_REVIEWER
+  FINANCE_CASH_FLOW_FORECASTER
+  FINANCE_MONTH_END_ASSISTANT
+  FINANCE_TAX_COMPLIANCE
+  // IT Department
+  IT_HELPDESK_TRIAGE
+  IT_ACCESS_REQUEST
+  IT_ASSET_MANAGER
+  IT_PATCH_ADVISOR
+  IT_PASSWORD_RESET
+  // Executive Department
+  EXEC_BOARD_REPORT
+  EXEC_KPI_NARRATOR
+  EXEC_COMPETITIVE_INTEL
+  EXEC_MEETING_PREP
+  EXEC_INVESTOR_UPDATE
+  // Operations Expanded
+  OPS_PROCUREMENT_AGENT
+  OPS_VENDOR_MONITOR
+  OPS_PROCESS_DOCS
+  OPS_SUPPLY_CHAIN_MONITOR
+  // Product Expanded
+  PRODUCT_USER_STORY
+  PRODUCT_SPRINT_PLANNER
+  PRODUCT_FEATURE_PRIORITIZER
+  PRODUCT_RELEASE_NOTES
+  // QA Expanded
+  QA_API_TEST_GENERATOR
+  QA_ACCESSIBILITY_CHECKER
+  QA_PERFORMANCE_ANALYZER
+  QA_RELEASE_SIGNOFF
+  // Engineering Expanded
+  ENG_PR_REVIEWER
+  ENG_ARCH_DECISION
+  ENG_DEPENDENCY_SCANNER
+  ENG_TECH_DOCS
+  // Risk Expanded
+  RISK_VENDOR_ASSESSOR
+  RISK_BCP_PLANNER
+  RISK_REGULATORY_MONITOR
+  RISK_THIRD_PARTY_SCORER
+  // Security Expanded
+  SECURITY_VULN_ASSESSOR
+  SECURITY_AWARENESS_TRAINER
+  SECURITY_DATA_CLASSIFIER
+  SECURITY_IR_PLAYBOOK
+  // Compliance Expanded
+  COMPLIANCE_GDPR_MONITOR
+  COMPLIANCE_SOC2_COLLECTOR
+  COMPLIANCE_TRAINING_TRACKER
+  COMPLIANCE_POLICY_NOTIFIER
+  // Marketing Expanded
+  MARKETING_CONTENT_CALENDAR
+  MARKETING_COMPETITOR_MONITOR
+  MARKETING_PRESS_RELEASE
+  // Data & Analytics Expanded
+  DATA_PIPELINE_MONITOR
+  DATA_SEGMENTATION
+  DATA_AB_TEST_ANALYZER
+  // Infra & Ops Expanded
+  INFRA_COST_OPTIMIZER
+  INFRA_DR_PLANNER
+  INFRA_COMPLIANCE_CHECKER
+  // General
+  CUSTOMER_SUPPORT_GENERIC
+  DOCUMENT_PROCESSING
+  EMAIL_COMMUNICATION
+  FRAUD_MONITORING
+  COMPLIANCE_GENERIC
+  REPORTING
+  FINANCE_GENERIC
+  DATA_ANALYST
+  WORKFLOW_AUTOMATION
+}
+
+enum AgentStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+  ERROR
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TriggerType {
+  MANUAL
+  SCHEDULED
+  WEBHOOK
+  EVENT
+  REALTIME
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum StepType {
+  TRIGGER
+  AGENT
+  CONDITION
+  ACTION
+  INTEGRATION
+  NOTIFICATION
+}
+
+enum IntegrationType {
+  REST_API
+  DATABASE
+  PAYMENT
+  IDENTITY
+  MESSAGING
+  WEBHOOK
+  FILE_PROCESSING
+  CLOUD_SERVICE
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  SYNCING
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum SubStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+enum Severity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum Department {
+  HR
+  LEGAL
+  ENGINEERING
+  RISK
+  SECURITY
+  COMPLIANCE
+  QA
+  PRODUCT
+  OPERATIONS
+  FINANCE
+  EXECUTIVE
+  IT
+  MARKETING
+  DATA_ANALYTICS
+  INFRA_OPS
+  CUSTOMER_SUPPORT
+}
+
+// ─────────────────────────────────────────────
+// Governance & Compliance
+// ─────────────────────────────────────────────
+
+model GovernanceModelCard {
+  id              String   @id @default(cuid())
+  agentId         String
+  agent           Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  modelType       String
+  version         String
+  biasAssessment  Json     @default("{}")
+  fairnessMetrics Json     @default("{}")
+  dataSources     Json     @default("[]")
+  limitations     String[]
+  approvedBy      String?
+  status          String   @default("draft") // draft, pending_review, approved, rejected
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+}
+
+model GovernanceDecision {
+  id         String   @id @default(cuid())
+  agentId    String
+  agent      Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  decision   String
+  rationale  String   @db.Text
+  impact     String
+  decidedBy  String
+  reviewedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+}
+
+model ComplianceReport {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  framework  String
+  findings   Json     @default("[]")
+  riskLevel  String   @default("low") // low, medium, high, critical
+  periodDays Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([framework])
+}
+
+// ─────────────────────────────────────────────
+// Drift Detection
+// ─────────────────────────────────────────────
+
+model DriftBaseline {
+  id            String   @id @default(cuid())
+  agentId       String
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  metric        String
+  baselineValue Float
+  threshold     Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+}
+
+model DriftEvent {
+  id            String   @id @default(cuid())
+  agentId       String
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  metric        String
+  baselineValue Float
+  currentValue  Float
+  deviation     Float
+  severity      String   @default("info") // info, warning, critical
+  acknowledged  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+  @@index([severity])
+}
+
+// ─────────────────────────────────────────────
+// Marketplace
+// ─────────────────────────────────────────────
+
+model MarketplaceListing {
+  id             String               @id @default(cuid())
+  name           String
+  description    String               @db.Text
+  category       String
+  tags           String[]
+  authorTenantId String
+  authorTenant   Tenant               @relation("MarketplaceListings", fields: [authorTenantId], references: [id], onDelete: Cascade)
+  version        String
+  pricing        Json                 @default("{}")
+  rating         Float                @default(0)
+  installCount   Int                  @default(0)
+  status         String               @default("draft") // draft, pending_review, published, suspended
+  config         Json                 @default("{}")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  reviews        MarketplaceReview[]
+  installs       MarketplaceInstall[]
+
+  @@index([authorTenantId])
+  @@index([category])
+  @@index([status])
+}
+
+model MarketplaceReview {
+  id        String             @id @default(cuid())
+  listingId String
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String             @db.Text
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([listingId])
+  @@index([tenantId])
+}
+
+model MarketplaceInstall {
+  id        String             @id @default(cuid())
+  listingId String
+  listing   MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([listingId])
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// Orchestrated Workflows
+// ─────────────────────────────────────────────
+
+model OrchestratedWorkflow {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?   @db.Text
+  nodes       Json      @default("[]")
+  edges       Json      @default("[]")
+  status      String    @default("draft") // draft, running, completed, failed, paused, cancelled
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Prompt Versioning
+// ─────────────────────────────────────────────
+
+model PromptVersion {
+  id            String   @id @default(cuid())
+  agentId       String
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  version       Int
+  content       String   @db.Text
+  message       String
+  author        String
+  branch        String   @default("main")
+  tags          String[]
+  parentVersion Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([agentId])
+  @@index([agentId, version])
+}
+
+// ─────────────────────────────────────────────
+// Webhooks
+// ─────────────────────────────────────────────
+
+model WebhookSubscription {
+  id         String            @id @default(cuid())
+  tenantId   String
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  url        String
+  secret     String
+  events     String[]
+  active     Boolean           @default(true)
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  deliveries WebhookDelivery[]
+
+  @@index([tenantId])
+}
+
+model WebhookDelivery {
+  id             String              @id @default(cuid())
+  subscriptionId String
+  subscription   WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  event          String
+  payload        Json
+  status         String              @default("pending") // pending, delivered, failed, retrying
+  attempts       Int                 @default(0)
+  lastAttemptAt  DateTime?
+  responseCode   Int?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// Team Invites
+// ─────────────────────────────────────────────
+
+model TeamInvite {
+  id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email      String
+  role       String
+  token      String    @unique
+  invitedBy  String
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+// ─────────────────────────────────────────────
+// Notifications
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String
+  category  String
+  title     String
+  message   String    @db.Text
+  channels  String[]
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([read])
+}
+
+// ─────────────────────────────────────────────
+// SSO Configuration
+// ─────────────────────────────────────────────
+
+model SSOConfig {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider       String
+  protocol       String // SAML, OIDC
+  config         Json     @default("{}")
+  active         Boolean  @default(false)
+  allowedDomains String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// White-Label Configuration
+// ─────────────────────────────────────────────
+
+model WhiteLabelConfig {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  theme          Json     @default("{}")
+  customDomain   String?
+  domainVerified Boolean  @default(false)
+  emailBranding  Json?
+  loginPage      Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// Onboarding Progress
+// ─────────────────────────────────────────────
+
+model OnboardingProgress {
+  id     String @id @default(cuid())
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// Full wizard v2 state (see lib/onboarding/wizard-schema)
+  payload Json @default("{}")
+
+  /// Denormalized for list queries: wizard reached success / skipped
+  done           Boolean  @default(false)
+  /// Last active step 1…9
+  currentStep    String   @default("1")
+  completedSteps String[] @default([])
+
+  startedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// Markets & Apps
+// ─────────────────────────────────────────────
+
+model Market {
+  id                  String        @id @default(cuid())
+  code                String        @unique // 'za', 'ng', 'ke' etc
+  name                String
+  flag                String
+  region              String
+  status              String        @default("coming_soon")
+  currencyCode        String
+  dataResidencyLaw    String
+  dataResidencyRegion String
+  complianceNotes     String?
+  isActive            Boolean       @default(false)
+  tenantId            String
+  tenant              Tenant        @relation(fields: [tenantId], references: [id])
+  apps                AppProperty[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([tenantId])
+}
+
+model AppProperty {
+  id                 String            @id @default(cuid())
+  name               String
+  shortName          String
+  type               String // website, mobile-ios, mobile-android, internal-portal, api, whatsapp, ussd
+  description        String
+  marketId           String
+  market             Market            @relation(fields: [marketId], references: [id])
+  ownerDivision      String
+  sharedWith         String[] // division IDs
+  status             String            @default("development")
+  url                String?
+  identifier         String?
+  integrationMethods String[] // integration method IDs
+  color              String            @default("#3b82f6")
+  tenantId           String
+  tenant             Tenant            @relation(fields: [tenantId], references: [id])
+  deployments        AgentDeployment[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([tenantId])
+  @@index([marketId])
+}
+
+model AgentDeployment {
+  id            String       @id @default(cuid())
+  instanceId    String       @unique @default(cuid())
+  templateId    String
+  name          String
+  department    String
+  icon          String       @default("🤖")
+  color         String       @default("#3b82f6")
+  status        String       @default("active") // active, pending, paused, error
+  markets       String[] // market codes e.g. ['za', 'ng']
+  appIds        String[] // AppProperty IDs
+  deployedBy    String // user email
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id])
+  appProperty   AppProperty? @relation(fields: [appPropertyId], references: [id])
+  appPropertyId String?
+  runCount      Int          @default(0)
+  lastRunAt     DateTime?
+  config        Json         @default("{}")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([tenantId])
+  @@index([templateId])
+}
+
+// ─────────────────────────────────────────────
+// Reseller / White-Label Partner System
+// ─────────────────────────────────────────────
+
+model Reseller {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  contactEmail   String
+  contactName    String
+  status         ResellerStatus @default(PENDING)
+  tier           ResellerTier   @default(STANDARD)
+  commissionRate Float          @default(0.20)
+  clientLimit    Int            @default(10)
+  totalMRR       Float          @default(0)
+  totalClients   Int            @default(0)
+  contractStart  DateTime?
+  contractEnd    DateTime?
+  notes          String?        @db.Text
+  onboardedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  clients     ResellerClient[]
+  commissions ResellerCommission[]
+}
+
+model ResellerClient {
+  id         String   @id @default(cuid())
+  resellerId String
+  reseller   Reseller @relation(fields: [resellerId], references: [id], onDelete: Cascade)
+  tenantId   String   @unique
+  mrr        Float    @default(0)
+  plan       String   @default("STARTER")
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([resellerId])
+}
+
+model ResellerCommission {
+  id         String    @id @default(cuid())
+  resellerId String
+  reseller   Reseller  @relation(fields: [resellerId], references: [id], onDelete: Cascade)
+  month      String
+  revenue    Float
+  commission Float
+  status     String    @default("pending")
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([resellerId])
+  @@index([month])
+}
+
+enum ResellerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CHURNED
+}
+
+enum ResellerTier {
+  STANDARD
+  SILVER
+  GOLD
+  PLATINUM
+}
