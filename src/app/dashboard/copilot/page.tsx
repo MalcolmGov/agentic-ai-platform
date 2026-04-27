@@ -33,7 +33,67 @@ const QUICK_COMMANDS = [
   { label: "Pause DocProcessor", icon: "⏸️", cmd: "Pause the DocProcessor agent until further notice" },
 ];
 
-// Simulated responses
+// ─── API call with streaming ────────────────────────────────
+async function streamCopilot(
+  messages: { role: string; content: string }[],
+  onDelta: (delta: string) => void,
+  onDone: () => void,
+  onError: (err: string) => void
+) {
+  try {
+    const res = await fetch("/api/orchestration", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, stream: true }),
+    });
+
+    if (!res.ok) {
+      // Non-streaming JSON fallback
+      const json = await res.json();
+      onDelta(json?.data?.content ?? "Something went wrong.");
+      onDone();
+      return;
+    }
+
+    const contentType = res.headers.get("content-type") ?? "";
+
+    // Non-streaming JSON response (e.g. fallback mode)
+    if (!contentType.includes("text/event-stream")) {
+      const json = await res.json();
+      onDelta(json?.data?.content ?? "");
+      onDone();
+      return;
+    }
+
+    // Streaming SSE
+    const reader = res.body?.getReader();
+    if (!reader) { onError("No response body"); return; }
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") { onDone(); return; }
+        try {
+          const { delta } = JSON.parse(payload);
+          if (delta) onDelta(delta);
+        } catch { /* skip malformed */ }
+      }
+    }
+    onDone();
+  } catch (err) {
+    onError((err as Error).message);
+  }
+}
+
+// Placeholder — kept only for typing; unused after wiring API
 const SIMULATED_RESPONSES: Record<string, { text: string; action: ExecutedAction }> = {
   deploy: {
     text: `✅ **FraudGuard-v2** deployed successfully.
@@ -190,7 +250,7 @@ export default function CopilotPage() {
       role: "assistant",
       content: `👋 **Welcome to AI Ops Copilot.**
 
-I'm your natural language control plane for the Swifter AI Platform. You can tell me what to do in plain English:
+I'm your natural language control plane for the AI Platform Platform. You can tell me what to do in plain English:
 
 - **"Deploy a fraud agent monitoring $5K+ transactions"**
 - **"Show me agent status"**
@@ -221,49 +281,48 @@ What would you like to do?`,
       timestamp: new Date(),
     };
 
+    // Build conversation history for the API
+    const history = [
+      ...messages
+        .filter(m => m.role === "user" || m.role === "assistant")
+        .map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+      { role: "user" as const, content: msg.trim() },
+    ];
+
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsProcessing(true);
 
-    // Classify intent
-    const intent = classifyIntent(msg);
-    const response = SIMULATED_RESPONSES[intent] || SIMULATED_RESPONSES.status;
-
-    // Simulate thinking delay
-    await new Promise((r) => setTimeout(r, 800 + Math.random() * 1200));
-
-    // Add thinking message
+    // Placeholder streaming message
+    const streamId = `assistant_${Date.now()}`;
     setMessages((prev) => [
       ...prev,
-      {
-        id: `thinking_${Date.now()}`,
-        role: "system",
-        content: `🔄 Processing: ${response.action.label}...`,
-        timestamp: new Date(),
-      },
+      { id: streamId, role: "assistant", content: "", timestamp: new Date() },
     ]);
 
-    // Simulate execution delay
-    await new Promise((r) => setTimeout(r, 600 + Math.random() * 800));
-
-    // Replace thinking with actual response
-    setMessages((prev) => {
-      const filtered = prev.filter((m) => !m.id.startsWith("thinking_"));
-      return [
-        ...filtered,
-        {
-          id: `assistant_${Date.now()}`,
-          role: "assistant",
-          content: response.text,
-          timestamp: new Date(),
-          action: response.action,
-        },
-      ];
-    });
-
-    setIsProcessing(false);
-    inputRef.current?.focus();
-  }, [input, isProcessing]);
+    streamCopilot(
+      history,
+      (delta) => {
+        setMessages((prev) =>
+          prev.map(m => m.id === streamId ? { ...m, content: m.content + delta } : m)
+        );
+      },
+      () => {
+        setIsProcessing(false);
+        inputRef.current?.focus();
+      },
+      (err) => {
+        console.error("[Copilot]", err);
+        setMessages((prev) =>
+          prev.map(m => m.id === streamId
+            ? { ...m, content: "Sorry, I encountered an error. Please try again." }
+            : m
+          )
+        );
+        setIsProcessing(false);
+      }
+    );
+  }, [input, isProcessing, messages]);
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">

@@ -103,7 +103,7 @@ export class OpenApiEngine {
     return {
       openapi: "3.1.0",
       info: {
-        title: "Swifter AI Platform API",
+        title: "AI Platform Platform API",
         version: "1.0.0",
         description: "Multi-tenant AI agent platform with orchestration, marketplace, governance, and enterprise features.",
         contact: { email: "support@agentplatform.com" },

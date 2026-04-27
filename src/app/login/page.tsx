@@ -71,7 +71,7 @@ function LoginForm() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-text-primary">Welcome Back</h1>
-          <p className="text-text-secondary mt-1 text-sm">Sign in to your Swifter AI Platform</p>
+          <p className="text-text-secondary mt-1 text-sm">Sign in to your AI Platform Platform</p>
         </div>
 
         {/* Success message (from registration) */}

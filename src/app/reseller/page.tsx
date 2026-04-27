@@ -383,7 +383,7 @@ export default function ResellerOverviewPage() {
             icon="🎧"
             title="Request Support"
             desc="Contact partner success team"
-            onClick={() => window.location.href = "mailto:support@swifterai.io?subject=Partner Support Request"}
+            onClick={() => window.location.href = "mailto:support@{{YOUR_DOMAIN}}?subject=Partner Support Request"}
           />
         </div>
       </div>

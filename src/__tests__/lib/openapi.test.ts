@@ -12,7 +12,7 @@ describe("OpenApiEngine", () => {
     it("generates valid OpenAPI 3.1 spec", () => {
       const spec = engine.getSpec();
       expect(spec.openapi).toBe("3.1.0");
-      expect(spec.info.title).toBe("Swifter AI Platform API");
+      expect(spec.info.title).toBe("AI Platform Platform API");
       expect(spec.servers.length).toBe(2);
       expect(Object.keys(spec.paths).length).toBeGreaterThan(0);
     });

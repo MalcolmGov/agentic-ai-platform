@@ -11,10 +11,10 @@ interface ClientBranding {
 }
 
 const MOCK_CLIENT_BRANDING: ClientBranding[] = [
-  { name: "Acme Corp", domain: "acme.swifterai.io", logoSet: true, colorsSet: true, status: "active" },
+  { name: "Acme Corp", domain: "acme.{{YOUR_DOMAIN}}", logoSet: true, colorsSet: true, status: "active" },
   { name: "TechStart SA", domain: null, logoSet: false, colorsSet: false, status: "unconfigured" },
-  { name: "MegaRetail Ltd", domain: "megaretail.swifterai.io", logoSet: true, colorsSet: false, status: "pending" },
-  { name: "FinServ Group", domain: "finserv.swifterai.io", logoSet: true, colorsSet: true, status: "active" },
+  { name: "MegaRetail Ltd", domain: "megaretail.{{YOUR_DOMAIN}}", logoSet: true, colorsSet: false, status: "pending" },
+  { name: "FinServ Group", domain: "finserv.{{YOUR_DOMAIN}}", logoSet: true, colorsSet: true, status: "active" },
   { name: "LogiCo Africa", domain: null, logoSet: false, colorsSet: false, status: "unconfigured" },
   { name: "HealthCare ZA", domain: null, logoSet: false, colorsSet: false, status: "unconfigured" },
 ];
@@ -162,7 +162,7 @@ export default function ResellerBrandingPage() {
                   style={{ backgroundColor: primaryColor }}>
                   Sign In
                 </button>
-                <p className="text-white/30 text-[10px]">Powered by Swifter AI</p>
+                <p className="text-white/30 text-[10px]">Powered by AI Platform</p>
               </div>
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function ResellerBrandingPage() {
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <div>
               <p className="text-sm font-medium text-emerald-400">Domain Active</p>
-              <p className="text-xs text-text-muted mt-0.5 font-mono">demo-partner.swifterai.io</p>
+              <p className="text-xs text-text-muted mt-0.5 font-mono">demo-partner.{{YOUR_DOMAIN}}</p>
             </div>
           </div>
           <div className="space-y-3">
@@ -254,7 +254,7 @@ export default function ResellerBrandingPage() {
                   <tr>
                     <td className="px-4 py-3 text-electric-400">CNAME</td>
                     <td className="px-4 py-3 text-text-primary">app</td>
-                    <td className="px-4 py-3 text-text-muted">platform.swifterai.io</td>
+                    <td className="px-4 py-3 text-text-muted">platform.{{YOUR_DOMAIN}}</td>
                   </tr>
                   <tr>
                     <td className="px-4 py-3 text-electric-400">TXT</td>

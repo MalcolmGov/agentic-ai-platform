@@ -1,7 +1,7 @@
 {
-  "name": "@swifter-ai/mobile-sdk",
+  "name": "@agentic-ai/sdk",
   "version": "0.1.0",
-  "description": "Swifter AI Mobile SDK — Embed AI agents in React Native, iOS, and Android apps",
+  "description": "Agentic AI Mobile SDK — Embed AI agents in React Native, iOS, and Android apps",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist", "src", "README.md"],
@@ -18,6 +18,6 @@
     "@types/react": "^19.0.0",
     "@types/react-native": "^0.73.0"
   },
-  "keywords": ["swifter-ai", "mobile-sdk", "react-native", "ai-agents", "africa"],
+  "keywords": ["agentic-ai", "mobile-sdk", "react-native", "ai-agents", "africa"],
   "license": "MIT"
 }

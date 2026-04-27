@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * AgenticVoiceCoPilot — AI Voice Co-Pilot for the Swifter AI Platform
+ * AgenticVoiceCoPilot — AI Voice Co-Pilot for the AI Platform Platform
  *
  * WebRTC speech-to-speech with function calling for live platform data.
  * Pure CSS animations (no framer-motion dependency).
@@ -286,14 +286,14 @@ export default function AgenticVoiceCoPilot() {
               type: "response.create",
               response: {
                 modalities: ["audio", "text"],
-                instructions: 'Greet the user. Say "Hi, I\'m your Swifter AI co-pilot. I can brief you on agent performance, anomalies, costs, workflows, and security posture. What would you like to know?" Keep it brief and professional.',
+                instructions: 'Greet the user. Say "Hi, I\'m your AI Platform co-pilot. I can brief you on agent performance, anomalies, costs, workflows, and security posture. What would you like to know?" Keep it brief and professional.',
               },
             }));
           }
         }, 800);
         greetRef.current = setTimeout(() => {
           setTranscript(p => p.length === 0
-            ? [{ id: `g-${Date.now()}`, role: "assistant", text: "Hi, I'm your Swifter AI co-pilot. What would you like to know?", ts: Date.now() }]
+            ? [{ id: `g-${Date.now()}`, role: "assistant", text: "Hi, I'm your AI Platform co-pilot. What would you like to know?", ts: Date.now() }]
             : p);
         }, 6000);
       };
@@ -432,7 +432,7 @@ export default function AgenticVoiceCoPilot() {
             <span style={{ fontSize: 18 }}>🤖</span>
             <div style={{ textAlign: "left" }}>
               <div style={{ fontSize: 13, lineHeight: 1.2 }}>Voice Co-Pilot</div>
-              <div style={{ fontSize: 9, fontWeight: 400, opacity: 0.7 }}>Talk to Swifter AI</div>
+              <div style={{ fontSize: 9, fontWeight: 400, opacity: 0.7 }}>Talk to AI Platform</div>
             </div>
           </>
         )}
@@ -449,7 +449,7 @@ export default function AgenticVoiceCoPilot() {
                 background: "linear-gradient(135deg, #3b82f6, #8b5cf6)", fontSize: 18,
               }}>🤖</div>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.01em" }}>Swifter AI Co-Pilot</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.01em" }}>AI Platform Co-Pilot</p>
                 <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
                   {conn === "connected" ? (isAiSpeaking ? "🔊 Speaking..." : "🎤 Listening...") : conn === "connecting" ? "⏳ Connecting..." : conn === "error" ? "❌ Error" : "Ready"}
                 </p>
@@ -472,7 +472,7 @@ export default function AgenticVoiceCoPilot() {
                   border: "1px solid rgba(59,130,246,0.15)", fontSize: 32,
                 }}>🤖</div>
                 <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", margin: 0 }}>Voice Co-Pilot</p>
-                <p style={{ fontSize: 12, color: "#3b82f6", margin: 0, fontWeight: 600 }}>Powered by Swifter AI</p>
+                <p style={{ fontSize: 12, color: "#3b82f6", margin: 0, fontWeight: 600 }}>Powered by AI Platform</p>
                 <p style={{ fontSize: 11, color: "#475569", margin: 0, maxWidth: 240, lineHeight: 1.5 }}>Two-way voice with live access to agent performance, costs, anomalies, and security data</p>
               </div>
             )}
@@ -548,7 +548,7 @@ export default function AgenticVoiceCoPilot() {
             )}
           </div>
           <p style={{ textAlign: "center", fontSize: 10, color: "#334155", paddingBottom: 12, margin: 0 }}>
-            Swifter AI Platform · Voice-powered operations intelligence
+            AI Platform Platform · Voice-powered operations intelligence
           </p>
         </div>
       )}

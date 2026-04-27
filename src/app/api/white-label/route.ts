@@ -35,13 +35,13 @@ const DEFAULT_CONFIG = {
   customDomain: null,
   domainVerified: false,
   emailBranding: {
-    fromName: "Swifter AI",
-    fromEmail: "noreply@swifterai.io",
-    replyTo: "support@swifterai.io",
+    fromName: "AI Platform",
+    fromEmail: "noreply@{{YOUR_DOMAIN}}",
+    replyTo: "support@{{YOUR_DOMAIN}}",
     headerColor: "#6366f1",
   },
   loginPage: {
-    headline: "Swifter AI",
+    headline: "AI Platform",
     subheadline: "Platform",
     backgroundUrl: null,
     showPoweredBy: true,

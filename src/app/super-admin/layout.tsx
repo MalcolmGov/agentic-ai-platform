@@ -54,7 +54,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
               A
             </div>
             <div>
-              <div className="text-sm font-bold text-white tracking-tight">Swifter AI</div>
+              <div className="text-sm font-bold text-white tracking-tight">AI Platform</div>
               <span className="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                 Super Admin
               </span>

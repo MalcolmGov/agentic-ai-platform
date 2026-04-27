@@ -84,8 +84,8 @@ export default function DocsPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-navy-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 no-underline">
-            <Image src="/logo-3d.png" alt="Swifter AI" width={32} height={32} className="rounded-lg" />
-            <span className="font-bold text-text-primary">Swifter AI</span>
+            <Image src="/logo-3d.png" alt="AI Platform" width={32} height={32} className="rounded-lg" />
+            <span className="font-bold text-text-primary">AI Platform</span>
             <span className="text-text-muted text-sm">/ Docs</span>
           </Link>
           <Link href="/dashboard" className="btn-primary text-sm px-5 py-2">Open Dashboard</Link>
@@ -95,7 +95,7 @@ export default function DocsPage() {
       <div className="pt-24 pb-16 px-6 max-w-5xl mx-auto">
         <div className="mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-electric-500/10 text-electric-400 text-xs font-semibold uppercase tracking-wider mb-4">API Reference</div>
-          <h1 className="text-4xl font-bold text-text-primary mb-4">Swifter AI Platform API</h1>
+          <h1 className="text-4xl font-bold text-text-primary mb-4">AI Platform Platform API</h1>
           <p className="text-text-secondary text-lg max-w-2xl">Complete REST API documentation for managing agents, workflows, knowledge, and more. All endpoints require a valid JWT token or API key.</p>
         </div>
 

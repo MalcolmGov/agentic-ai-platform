@@ -462,7 +462,7 @@ export default function OnboardingPage() {
                 </div>
                 <h1 className="text-5xl md:text-6xl font-bold text-text-primary leading-tight">
                   Welcome to{" "}
-                  <span className="gradient-text">Swifter AI</span>
+                  <span className="gradient-text">AI Platform</span>
                 </h1>
                 <p className="text-lg text-text-secondary max-w-lg mx-auto leading-relaxed">
                   Configure governance, connections, and your first agent in about{" "}

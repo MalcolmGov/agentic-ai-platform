@@ -1,8 +1,8 @@
-# @swifter-ai/mobile-sdk
+# @agentic-ai/sdk
 
 Embed AI agents in your React Native, iOS, and Android apps with a single package. Built for African markets — data residency compliant, multilingual, and production-ready.
 
-[![npm version](https://img.shields.io/npm/v/@swifter-ai/mobile-sdk.svg)](https://www.npmjs.com/package/@swifter-ai/mobile-sdk)
+[![npm version](https://img.shields.io/npm/v/@agentic-ai/sdk.svg)](https://www.npmjs.com/package/@agentic-ai/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
@@ -10,9 +10,9 @@ Embed AI agents in your React Native, iOS, and Android apps with a single packag
 ## Installation
 
 ```bash
-npm install @swifter-ai/mobile-sdk
+npm install @agentic-ai/sdk
 # or
-yarn add @swifter-ai/mobile-sdk
+yarn add @agentic-ai/sdk
 ```
 
 ---
@@ -21,7 +21,7 @@ yarn add @swifter-ai/mobile-sdk
 
 ```tsx
 import React from 'react'
-import { AgenticProvider, AgentChat } from '@swifter-ai/mobile-sdk'
+import { AgenticProvider, AgentChat } from '@agentic-ai/sdk'
 
 const agenticConfig = {
   apiKey: 'your-api-key',
@@ -71,7 +71,7 @@ cd ios && pod install
   <false/>
   <key>NSExceptionDomains</key>
   <dict>
-    <key>api.swifterai.io</key>
+    <key>api.{{YOUR_DOMAIN}}</key>
     <dict>
       <key>NSExceptionAllowsInsecureHTTPLoads</key>
       <false/>
@@ -113,7 +113,7 @@ For development, add to your `AndroidManifest.xml` application tag:
 >
 ```
 
-Remove `usesCleartextTraffic` for production — the Swifter AI API uses HTTPS exclusively.
+Remove `usesCleartextTraffic` for production — the AI Platform API uses HTTPS exclusively.
 
 ---
 
@@ -127,7 +127,7 @@ Remove `usesCleartextTraffic` for production — the Swifter AI API uses HTTPS e
 | `appId` | `string` | ✅ | — | Your registered app ID |
 | `market` | `string` | ✅ | — | Market code (e.g. `'za'`, `'ng'`, `'ke'`) |
 | `department` | `string` | — | — | Department context (e.g. `'HR'`, `'CUSTOMER_SUPPORT'`) |
-| `baseUrl` | `string` | — | `https://api.swifterai.io` | Override for on-premise deployments |
+| `baseUrl` | `string` | — | `https://api.{{YOUR_DOMAIN}}` | Override for on-premise deployments |
 | `theme.primaryColor` | `string` | — | `#3b82f6` | Chat UI accent color |
 | `theme.fontFamily` | `string` | — | System default | Font override |
 | `theme.borderRadius` | `number` | — | `16` | Border radius for chat bubbles |
@@ -169,7 +169,7 @@ Remove `usesCleartextTraffic` for production — the Swifter AI API uses HTTPS e
 ### HR Onboarding Bot
 
 ```tsx
-import { AgenticProvider, AgentChat } from '@swifter-ai/mobile-sdk'
+import { AgenticProvider, AgentChat } from '@agentic-ai/sdk'
 
 export function HRScreen() {
   return (
@@ -191,7 +191,7 @@ export function HRScreen() {
 ### Customer Support Bot (Swahili)
 
 ```tsx
-import { AgenticProvider, AgentChat } from '@swifter-ai/mobile-sdk'
+import { AgenticProvider, AgentChat } from '@agentic-ai/sdk'
 
 export function SupportScreen() {
   return (
@@ -215,7 +215,7 @@ export function SupportScreen() {
 ### Multi-Market App
 
 ```tsx
-import { AgenticProvider, AgentChat, useMarket } from '@swifter-ai/mobile-sdk'
+import { AgenticProvider, AgentChat, useMarket } from '@agentic-ai/sdk'
 
 function MarketInfo() {
   const market = useMarket()
@@ -242,7 +242,7 @@ export function MultiMarketApp({ userMarket }: { userMarket: string }) {
 Use `useAgent` to build your own custom UI:
 
 ```tsx
-import { useAgent } from '@swifter-ai/mobile-sdk'
+import { useAgent } from '@agentic-ai/sdk'
 
 function CustomChat() {
   const { messages, isLoading, error, sendMessage, clearMessages } = useAgent({
@@ -260,4 +260,4 @@ function CustomChat() {
 
 ## License
 
-MIT © Swifter AI
+MIT © AI Platform

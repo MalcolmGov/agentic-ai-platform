@@ -97,7 +97,7 @@ function isSuperAdmin(req: NextRequest): boolean {
     const role: string = payload.role ?? "";
 
     return (
-      email.endsWith("@swifterai.io") ||
+      email.endsWith("@{{YOUR_DOMAIN}}") ||
       email === "admin@agentic.ai" ||
       role === "OWNER"
     );

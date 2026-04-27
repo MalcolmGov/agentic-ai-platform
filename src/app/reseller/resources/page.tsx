@@ -15,11 +15,11 @@ const SALES_RESOURCES: Resource[] = [
   { title: "ROI Calculator Template", description: "Customisable Excel model to demonstrate client value", type: "xlsx", action: "download" },
   { title: "Competitive Battle Cards", description: "Head-to-head comparisons vs ServiceNow, Microsoft Copilot, etc.", type: "pdf", action: "download" },
   { title: "Case Study: FNB 12-Week Deployment", description: "How FNB deployed 23 agents across 5 departments in 12 weeks", type: "pdf", action: "download" },
-  { title: "Pricing & Packaging Guide", description: "How to price and position Swifter AI for different client profiles", type: "pdf", action: "download" },
+  { title: "Pricing & Packaging Guide", description: "How to price and position AI Platform for different client profiles", type: "pdf", action: "download" },
 ];
 
 const TECHNICAL_RESOURCES: Resource[] = [
-  { title: "Integration Guide", description: "Connect Swifter AI to SAP, Salesforce, Microsoft 365, and more", type: "pdf", action: "download" },
+  { title: "Integration Guide", description: "Connect AI Platform to SAP, Salesforce, Microsoft 365, and more", type: "pdf", action: "download" },
   { title: "API Documentation", description: "Full REST API reference for custom integrations", type: "link", action: "open", href: "/dashboard/docs" },
   { title: "Mobile SDK Guide", description: "Embed AI agents in iOS and Android apps", type: "link", action: "open", href: "/dashboard/docs/mobile-sdk" },
   { title: "WhatsApp Setup Guide", description: "Connect WhatsApp Business API to agents", type: "link", action: "open", href: "/dashboard/settings/whatsapp" },
@@ -27,14 +27,14 @@ const TECHNICAL_RESOURCES: Resource[] = [
 ];
 
 const MARKETING_RESOURCES: Resource[] = [
-  { title: "Partner Logo Pack", description: "Official Swifter AI partner badges and co-brand assets", type: "zip", action: "download" },
+  { title: "Partner Logo Pack", description: "Official AI Platform partner badges and co-brand assets", type: "zip", action: "download" },
   { title: "Co-branded Email Templates", description: "Email sequences for prospect outreach and nurture", type: "zip", action: "download" },
   { title: "Social Media Kit", description: "LinkedIn, Twitter/X, and WhatsApp ready social assets", type: "zip", action: "download" },
   { title: "One-Page Product Summary", description: "Leave-behind PDF for in-person meetings", type: "pdf", action: "download" },
 ];
 
 const TRAINING_RESOURCES: Resource[] = [
-  { title: "Partner Certification Course", description: "3-hour online course to become a certified Swifter AI partner", type: "link", action: "open" },
+  { title: "Partner Certification Course", description: "3-hour online course to become a certified AI Platform partner", type: "link", action: "open" },
   { title: "Product Demo Script", description: "Step-by-step guide to running an impactful live demo", type: "pdf", action: "download" },
   { title: "Webinar: Selling AI to Enterprise Africa", description: "60-min recorded session on African enterprise AI buying patterns", type: "video", action: "watch" },
   { title: "Objection Handling Guide", description: "Responses to the 20 most common enterprise objections", type: "pdf", action: "download" },
@@ -153,7 +153,7 @@ export default function ResellerResourcesPage() {
           <p className="text-xs text-text-muted mt-1">Contact your dedicated partner success manager for custom materials.</p>
         </div>
         <a
-          href="mailto:partners@swifterai.io"
+          href="mailto:partners@{{YOUR_DOMAIN}}"
           className="px-4 py-2 rounded-lg bg-electric-500/20 border border-electric-500/30 text-electric-400 text-sm font-medium hover:bg-electric-500/30 transition-colors"
         >
           Contact Partner Success →

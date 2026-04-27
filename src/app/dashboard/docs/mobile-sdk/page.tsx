@@ -73,8 +73,8 @@ function Content({ section }: { section: Section }) {
     case 'installation': return (
       <div>
         <h2 className="text-xl font-bold text-text-primary mb-2">Installation</h2>
-        <p className="text-sm text-text-muted mb-4 leading-relaxed">Install the Swifter AI Mobile SDK via npm or yarn. The SDK supports React Native 0.73+ and requires peer dependencies for React 18+.</p>
-        <CodeBlock language="bash" code={`npm install @swifter-ai/mobile-sdk\n# or\nyarn add @swifter-ai/mobile-sdk\n# or\npnpm add @swifter-ai/mobile-sdk`} />
+        <p className="text-sm text-text-muted mb-4 leading-relaxed">Install the AI Platform Mobile SDK via npm or yarn. The SDK supports React Native 0.73+ and requires peer dependencies for React 18+.</p>
+        <CodeBlock language="bash" code={`npm install @agentic-ai/sdk\n# or\nyarn add @agentic-ai/sdk\n# or\npnpm add @agentic-ai/sdk`} />
         <div className="p-4 rounded-xl my-4" style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
           <p className="text-xs text-blue-400/90 leading-relaxed">ℹ️ The SDK is compatible with <strong>Expo SDK 50+</strong> and bare React Native. For Expo Go, some native modules may require a development build.</p>
         </div>
@@ -88,11 +88,11 @@ function Content({ section }: { section: Section }) {
         <h2 className="text-xl font-bold text-text-primary mb-2">Quick Start</h2>
         <p className="text-sm text-text-muted mb-4 leading-relaxed">Get a working AI agent chat in your app in under 5 minutes.</p>
         <h3 className="text-sm font-bold text-text-primary mb-2">1. Wrap your app with AgenticProvider</h3>
-        <CodeBlock code={`import { AgenticProvider } from '@swifter-ai/mobile-sdk'\n\nexport default function App() {\n  return (\n    <AgenticProvider\n      config={{\n        apiKey: 'your_api_key',\n        appId: 'za-main-website',   // from Apps & Properties page\n        market: 'za',              // South Africa pilot\n      }}\n    >\n      <YourAppNavigator />\n    </AgenticProvider>\n  )\n}`} />
+        <CodeBlock code={`import { AgenticProvider } from '@agentic-ai/sdk'\n\nexport default function App() {\n  return (\n    <AgenticProvider\n      config={{\n        apiKey: 'your_api_key',\n        appId: 'za-main-website',   // from Apps & Properties page\n        market: 'za',              // South Africa pilot\n      }}\n    >\n      <YourAppNavigator />\n    </AgenticProvider>\n  )\n}`} />
         <h3 className="text-sm font-bold text-text-primary mb-2 mt-6">2. Add the AgentChat component</h3>
-        <CodeBlock code={`import { AgentChat } from '@swifter-ai/mobile-sdk'\n\nexport function SupportScreen() {\n  return (\n    <AgentChat\n      agentConfig={{\n        agentId: 'support-ticket-classifier',\n        welcomeMessage: 'Hi! How can I help you today? 👋',\n        language: 'en',\n      }}\n      style={{ flex: 1 }}\n    />\n  )\n}`} />
+        <CodeBlock code={`import { AgentChat } from '@agentic-ai/sdk'\n\nexport function SupportScreen() {\n  return (\n    <AgentChat\n      agentConfig={{\n        agentId: 'support-ticket-classifier',\n        welcomeMessage: 'Hi! How can I help you today? 👋',\n        language: 'en',\n      }}\n      style={{ flex: 1 }}\n    />\n  )\n}`} />
         <h3 className="text-sm font-bold text-text-primary mb-2 mt-6">3. Or use the hook directly</h3>
-        <CodeBlock code={`import { useAgent } from '@swifter-ai/mobile-sdk'\n\nfunction MyComponent() {\n  const { messages, sendMessage, isLoading } = useAgent({\n    agentId: 'hr-policy-qa',\n  })\n\n  return (\n    <Button\n      title="Ask HR"\n      onPress={() => sendMessage('What is the leave policy?')}\n    />\n  )\n}`} />
+        <CodeBlock code={`import { useAgent } from '@agentic-ai/sdk'\n\nfunction MyComponent() {\n  const { messages, sendMessage, isLoading } = useAgent({\n    agentId: 'hr-policy-qa',\n  })\n\n  return (\n    <Button\n      title="Ask HR"\n      onPress={() => sendMessage('What is the leave policy?')}\n    />\n  )\n}`} />
       </div>
     )
 
@@ -101,11 +101,11 @@ function Content({ section }: { section: Section }) {
         <h2 className="text-xl font-bold text-text-primary mb-2">Configuration</h2>
         <p className="text-sm text-text-muted mb-4 leading-relaxed">Pass configuration to <code className="font-mono text-electric-400">AgenticProvider</code>. Your API key and App ID are available in the dashboard under Apps & Properties.</p>
         <PropTable rows={[
-          { prop: 'apiKey', type: 'string', desc: 'Your Swifter AI API key. Find it in Settings → API Keys.' },
+          { prop: 'apiKey', type: 'string', desc: 'Your AI Platform API key. Find it in Settings → API Keys.' },
           { prop: 'appId', type: 'string', desc: 'The ID of the app registered in Apps & Properties (e.g. za-ios-app).' },
           { prop: 'market', type: 'string', desc: "Active market code: 'za' | 'ng' | 'ke' | 'gh' | 'tz' | 'zm' | 'zw' | 'bw' | 'mz' | 'ci' | 'sn' | 'cm' | 'ug'." },
           { prop: 'department', type: 'string?', desc: 'Optional department context for filtering agents shown to the user.' },
-          { prop: 'baseUrl', type: 'string?', default: "'https://api.swifterai.io'", desc: 'Override the API base URL (useful for self-hosted or staging).' },
+          { prop: 'baseUrl', type: 'string?', default: "'https://api.{{YOUR_DOMAIN}}'", desc: 'Override the API base URL (useful for self-hosted or staging).' },
           { prop: 'theme.primaryColor', type: 'string?', default: "'#3b82f6'", desc: 'Accent colour for bubbles and buttons (hex or rgb).' },
           { prop: 'theme.fontFamily', type: 'string?', desc: 'Custom font family for chat messages.' },
           { prop: 'theme.borderRadius', type: 'number?', default: '16', desc: 'Border radius for chat bubbles.' },
@@ -117,10 +117,10 @@ function Content({ section }: { section: Section }) {
       <div>
         <h2 className="text-xl font-bold text-text-primary mb-2">AgenticProvider</h2>
         <p className="text-sm text-text-muted mb-4 leading-relaxed">Root provider that supplies SDK config to all child components and hooks. Must wrap your app or the screen that uses agents.</p>
-        <CodeBlock code={`import { AgenticProvider } from '@swifter-ai/mobile-sdk'\n\n<AgenticProvider config={{\n  apiKey: string,\n  appId: string,\n  market: string,\n  department?: string,\n  baseUrl?: string,\n  theme?: { primaryColor?: string }\n}}>\n  {children}\n</AgenticProvider>`} />
+        <CodeBlock code={`import { AgenticProvider } from '@agentic-ai/sdk'\n\n<AgenticProvider config={{\n  apiKey: string,\n  appId: string,\n  market: string,\n  department?: string,\n  baseUrl?: string,\n  theme?: { primaryColor?: string }\n}}>\n  {children}\n</AgenticProvider>`} />
         <h3 className="text-sm font-bold text-text-primary mb-2 mt-6">useAgenticContext</h3>
         <p className="text-xs text-text-muted mb-3">Access the provider config from any child component.</p>
-        <CodeBlock code={`import { useAgenticContext } from '@swifter-ai/mobile-sdk'\n\nconst { config, isConnected } = useAgenticContext()`} />
+        <CodeBlock code={`import { useAgenticContext } from '@agentic-ai/sdk'\n\nconst { config, isConnected } = useAgenticContext()`} />
       </div>
     )
 
@@ -144,7 +144,7 @@ function Content({ section }: { section: Section }) {
       <div>
         <h2 className="text-xl font-bold text-text-primary mb-2">AgentChat Component</h2>
         <p className="text-sm text-text-muted mb-4 leading-relaxed">A complete, styled chat UI component. Drop it into any screen — it handles messages, loading states, errors, and keyboard avoidance.</p>
-        <CodeBlock code={`import { AgentChat } from '@swifter-ai/mobile-sdk'\n\n<AgentChat\n  agentConfig={{ agentId: 'support-whatsapp-bot', language: 'en' }}\n  style={{ flex: 1 }}\n  inputPlaceholder="Type a message..."\n  showTimestamps={true}\n/>`} />
+        <CodeBlock code={`import { AgentChat } from '@agentic-ai/sdk'\n\n<AgentChat\n  agentConfig={{ agentId: 'support-whatsapp-bot', language: 'en' }}\n  style={{ flex: 1 }}\n  inputPlaceholder="Type a message..."\n  showTimestamps={true}\n/>`} />
         <PropTable rows={[
           { prop: 'agentConfig', type: 'AgentConfig', desc: 'Agent configuration (see useAgent).' },
           { prop: 'style', type: 'ViewStyle?', desc: 'Style overrides for the outer container.' },
@@ -158,7 +158,7 @@ function Content({ section }: { section: Section }) {
       <div>
         <h2 className="text-xl font-bold text-text-primary mb-2">useMarket Hook</h2>
         <p className="text-sm text-text-muted mb-4 leading-relaxed">Returns the market config for the active market set in AgenticProvider. Use this to localise currency, language, and compliance messaging.</p>
-        <CodeBlock code={`import { useMarket } from '@swifter-ai/mobile-sdk'\n\nfunction PriceDisplay({ amount }: { amount: number }) {\n  const market = useMarket()\n  const formatted = new Intl.NumberFormat(market?.code ?? 'en-ZA', {\n    style: 'currency',\n    currency: market?.currency ?? 'ZAR',\n  }).format(amount)\n  return <Text>{formatted}</Text>\n}`} />
+        <CodeBlock code={`import { useMarket } from '@agentic-ai/sdk'\n\nfunction PriceDisplay({ amount }: { amount: number }) {\n  const market = useMarket()\n  const formatted = new Intl.NumberFormat(market?.code ?? 'en-ZA', {\n    style: 'currency',\n    currency: market?.currency ?? 'ZAR',\n  }).format(amount)\n  return <Text>{formatted}</Text>\n}`} />
       </div>
     )
 
@@ -214,7 +214,7 @@ function Content({ section }: { section: Section }) {
         <h2 className="text-xl font-bold text-text-primary mb-2">iOS Integration</h2>
         <p className="text-sm text-text-muted mb-4 leading-relaxed">Additional setup steps required for iOS native builds.</p>
         <h3 className="text-sm font-bold text-text-primary mb-2">1. Add network permission to Info.plist</h3>
-        <CodeBlock language="xml" code={`<key>NSAppTransportSecurity</key>\n<dict>\n  <key>NSAllowsArbitraryLoads</key>\n  <false/>\n  <key>NSExceptionDomains</key>\n  <dict>\n    <key>api.swifterai.io</key>\n    <dict>\n      <key>NSExceptionAllowsInsecureHTTPLoads</key>\n      <false/>\n      <key>NSIncludesSubdomains</key>\n      <true/>\n    </dict>\n  </dict>\n</dict>`} />
+        <CodeBlock language="xml" code={`<key>NSAppTransportSecurity</key>\n<dict>\n  <key>NSAllowsArbitraryLoads</key>\n  <false/>\n  <key>NSExceptionDomains</key>\n  <dict>\n    <key>api.{{YOUR_DOMAIN}}</key>\n    <dict>\n      <key>NSExceptionAllowsInsecureHTTPLoads</key>\n      <false/>\n      <key>NSIncludesSubdomains</key>\n      <true/>\n    </dict>\n  </dict>\n</dict>`} />
         <h3 className="text-sm font-bold text-text-primary mb-2 mt-6">2. Install Pods</h3>
         <CodeBlock language="bash" code={`cd ios && pod install`} />
         <h3 className="text-sm font-bold text-text-primary mb-2 mt-6">3. Minimum deployment target</h3>
@@ -244,17 +244,17 @@ function Content({ section }: { section: Section }) {
           <div>
             <h3 className="text-sm font-bold text-text-primary mb-1">HR Leave Request Bot (South Africa)</h3>
             <p className="text-xs text-text-muted mb-3">Deploy an HR agent inside the employee self-service app.</p>
-            <CodeBlock code={`import { AgenticProvider, AgentChat } from '@swifter-ai/mobile-sdk'\n\nexport function HRScreen() {\n  return (\n    <AgenticProvider config={{ apiKey: 'sk_...', appId: 'za-employee-portal', market: 'za', department: 'HR' }}>\n      <AgentChat\n        agentConfig={{\n          agentId: 'hr-leave-handler',\n          welcomeMessage: 'Hi! I can process leave requests and answer HR questions.',\n          language: 'en',\n        }}\n        showTimestamps\n      />\n    </AgenticProvider>\n  )\n}`} />
+            <CodeBlock code={`import { AgenticProvider, AgentChat } from '@agentic-ai/sdk'\n\nexport function HRScreen() {\n  return (\n    <AgenticProvider config={{ apiKey: 'sk_...', appId: 'za-employee-portal', market: 'za', department: 'HR' }}>\n      <AgentChat\n        agentConfig={{\n          agentId: 'hr-leave-handler',\n          welcomeMessage: 'Hi! I can process leave requests and answer HR questions.',\n          language: 'en',\n        }}\n        showTimestamps\n      />\n    </AgenticProvider>\n  )\n}`} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-text-primary mb-1">Multi-Market Customer Support Bot</h3>
             <p className="text-xs text-text-muted mb-3">Switch markets dynamically based on user location.</p>
-            <CodeBlock code={`import { AgenticProvider, AgentChat } from '@swifter-ai/mobile-sdk'\n\nexport function SupportScreen({ userMarket }: { userMarket: 'za' | 'ng' | 'ke' }) {\n  const langMap = { za: 'en', ng: 'en', ke: 'sw' }\n  return (\n    <AgenticProvider config={{ apiKey: 'sk_...', appId: \`\${userMarket}-main-website\`, market: userMarket }}>\n      <AgentChat\n        agentConfig={{\n          agentId: 'support-ticket-classifier',\n          language: langMap[userMarket],\n          welcomeMessage: 'Hello! How can we help you today?',\n        }}\n      />\n    </AgenticProvider>\n  )\n}`} />
+            <CodeBlock code={`import { AgenticProvider, AgentChat } from '@agentic-ai/sdk'\n\nexport function SupportScreen({ userMarket }: { userMarket: 'za' | 'ng' | 'ke' }) {\n  const langMap = { za: 'en', ng: 'en', ke: 'sw' }\n  return (\n    <AgenticProvider config={{ apiKey: 'sk_...', appId: \`\${userMarket}-main-website\`, market: userMarket }}>\n      <AgentChat\n        agentConfig={{\n          agentId: 'support-ticket-classifier',\n          language: langMap[userMarket],\n          welcomeMessage: 'Hello! How can we help you today?',\n        }}\n      />\n    </AgenticProvider>\n  )\n}`} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-text-primary mb-1">Custom useAgent Integration</h3>
             <p className="text-xs text-text-muted mb-3">Use the hook directly for custom UI patterns.</p>
-            <CodeBlock code={`import { useAgent } from '@swifter-ai/mobile-sdk'\n\nexport function QuickAsk() {\n  const { sendMessage, messages, isLoading } = useAgent({ agentId: 'legal-policy-qa' })\n  const lastReply = messages.filter(m => m.role === 'assistant').at(-1)\n\n  return (\n    <View>\n      {lastReply && <Text>{lastReply.content}</Text>}\n      <Button\n        disabled={isLoading}\n        title={isLoading ? 'Thinking...' : 'Ask about NDA policy'}\n        onPress={() => sendMessage('What does our standard NDA cover?')}\n      />\n    </View>\n  )\n}`} />
+            <CodeBlock code={`import { useAgent } from '@agentic-ai/sdk'\n\nexport function QuickAsk() {\n  const { sendMessage, messages, isLoading } = useAgent({ agentId: 'legal-policy-qa' })\n  const lastReply = messages.filter(m => m.role === 'assistant').at(-1)\n\n  return (\n    <View>\n      {lastReply && <Text>{lastReply.content}</Text>}\n      <Button\n        disabled={isLoading}\n        title={isLoading ? 'Thinking...' : 'Ask about NDA policy'}\n        onPress={() => sendMessage('What does our standard NDA cover?')}\n      />\n    </View>\n  )\n}`} />
           </div>
         </div>
       </div>

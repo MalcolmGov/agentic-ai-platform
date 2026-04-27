@@ -1,5 +1,5 @@
 /**
- * Swifter AI Platform — Base Agent Framework
+ * AI Platform Platform — Base Agent Framework
  * 
  * Abstract base class that all AI agents must extend.
  * Implements the Agent Lifecycle: init → plan → execute → report

@@ -29,7 +29,7 @@ export function useAgent(config: AgentConfig): UseAgentReturn {
     setError(null)
 
     try {
-      const baseUrl = providerConfig.baseUrl ?? 'https://api.swifterai.io'
+      const baseUrl = providerConfig.baseUrl ?? 'https://api.{{YOUR_DOMAIN}}'
       const res = await fetch(`${baseUrl}/api/agents/execute`, {
         method: 'POST',
         headers: {

@@ -79,8 +79,8 @@ export default function DemoPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-navy-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 no-underline">
-            <Image src="/logo-3d.png" alt="Swifter AI" width={36} height={36} className="rounded-xl" />
-            <span className="font-bold text-text-primary text-lg">Swifter AI</span>
+            <Image src="/logo-3d.png" alt="AI Platform" width={36} height={36} className="rounded-xl" />
+            <span className="font-bold text-text-primary text-lg">AI Platform</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="btn-primary text-sm px-5 py-2">Open Dashboard →</Link>

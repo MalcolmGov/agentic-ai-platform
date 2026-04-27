@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
       const temporaryPassword = `Ag${Math.random().toString(36).slice(2, 8).toUpperCase()}#2026`;
-      const loginUrl = `https://app.swifterai.io/login?tenant=${tenantSlug}`;
+      const loginUrl = `https://app.{{YOUR_DOMAIN}}/login?tenant=${tenantSlug}`;
 
       return apiResponse({
         tenantSlug,

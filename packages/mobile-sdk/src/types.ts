@@ -3,7 +3,7 @@ export interface AgenticConfig {
   appId: string
   market: string  // 'za' | 'ng' | 'ke' | etc
   department?: string
-  baseUrl?: string  // defaults to 'https://api.swifterai.io'
+  baseUrl?: string  // defaults to 'https://api.{{YOUR_DOMAIN}}'
   theme?: {
     primaryColor?: string
     fontFamily?: string

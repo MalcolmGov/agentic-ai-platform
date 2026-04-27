@@ -184,7 +184,7 @@ function LivePreview({ theme, loginPage }: {
           </button>
 
           {showPoweredBy && (
-            <p className="text-[9px] text-white/30 mt-3">Powered by Swifter AI</p>
+            <p className="text-[9px] text-white/30 mt-3">Powered by AI Platform</p>
           )}
         </div>
       </div>
@@ -510,7 +510,7 @@ export default function WhiteLabelPage() {
                       <tr>
                         <td className="px-4 py-2.5 font-mono text-electric-400">CNAME</td>
                         <td className="px-4 py-2.5 font-mono text-text-secondary">app</td>
-                        <td className="px-4 py-2.5 font-mono text-text-secondary">platform.swifterai.io</td>
+                        <td className="px-4 py-2.5 font-mono text-text-secondary">platform.{{YOUR_DOMAIN}}</td>
                       </tr>
                       <tr>
                         <td className="px-4 py-2.5 font-mono text-electric-400">TXT</td>
@@ -588,8 +588,8 @@ export default function WhiteLabelPage() {
                 <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-4" />
               </div>
               <div>
-                <span className="text-sm font-medium text-text-primary">Show &ldquo;Powered by Swifter AI&rdquo;</span>
-                <p className="text-xs text-text-muted">Display the Swifter AI attribution on the login page</p>
+                <span className="text-sm font-medium text-text-primary">Show &ldquo;Powered by AI Platform&rdquo;</span>
+                <p className="text-xs text-text-muted">Display the AI Platform attribution on the login page</p>
               </div>
             </label>
           </Section>

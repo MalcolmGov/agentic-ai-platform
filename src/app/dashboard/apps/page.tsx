@@ -509,7 +509,7 @@ function AppDrawer({ app, onClose }: { app: AppProperty; onClose: () => void }) 
             <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
               <p className="text-xs font-semibold text-blue-400 mb-1">Mobile SDK Integration</p>
               <p className="text-[11px] text-blue-400/80 leading-relaxed">
-                Install the SDK: <code className="font-mono">npm install @swifter-ai/mobile-sdk</code><br />
+                Install the SDK: <code className="font-mono">npm install @agentic-ai/sdk</code><br />
                 Full iOS & Android integration guide is available in the developer docs.
               </p>
             </div>

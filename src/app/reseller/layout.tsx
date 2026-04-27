@@ -95,9 +95,9 @@ export default function ResellerLayout({ children }: { children: React.ReactNode
         {/* Logo */}
         <div className="p-6 border-b border-slate-800">
           <Link href="/reseller" className="flex items-center gap-3 no-underline">
-            <Image src="/logo-3d.png" alt="Swifter AI" width={36} height={36} className="rounded-xl" />
+            <Image src="/logo-3d.png" alt="AI Platform" width={36} height={36} className="rounded-xl" />
             <div>
-              <div className="text-sm font-bold text-white tracking-tight">Swifter AI</div>
+              <div className="text-sm font-bold text-white tracking-tight">AI Platform</div>
               <div className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Partner Portal</div>
             </div>
           </Link>
@@ -136,10 +136,10 @@ export default function ResellerLayout({ children }: { children: React.ReactNode
           <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4">
             <div className="text-xs text-slate-500 mb-1">Partner Support</div>
             <a
-              href="mailto:support@swifterai.io"
+              href="mailto:support@{{YOUR_DOMAIN}}"
               className="text-xs text-yellow-400 hover:text-yellow-300 font-medium transition-colors"
             >
-              support@swifterai.io
+              support@{{YOUR_DOMAIN}}
             </a>
             <div className="mt-2 text-[10px] text-slate-600">
               {reseller ? `${reseller.totalClients} / ${reseller.clientLimit} clients` : "Loading…"}

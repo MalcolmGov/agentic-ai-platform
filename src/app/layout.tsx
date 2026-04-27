@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Swifter AI Platform — Enterprise Agent Orchestration",
+  title: "AI Platform Platform — Enterprise Agent Orchestration",
   description:
     "Deploy autonomous AI agents to automate operations, generate insights, and integrate with enterprise systems. Production-grade multi-tenant SaaS.",
 };

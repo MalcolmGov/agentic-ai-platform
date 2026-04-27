@@ -25,7 +25,7 @@ function buildDemoToken() {
     email: "demo@swifter-ai.com",
     role: "ADMIN",
     name: "Demo User",
-    tenantName: "Swifter AI Demo",
+    tenantName: "AI Platform Demo",
     isDemo: true,
     exp: Math.floor(Date.now() / 1000) + 3600,
   })).toString("base64");

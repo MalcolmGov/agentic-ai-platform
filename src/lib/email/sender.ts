@@ -64,7 +64,7 @@ export const EmailTemplates = {
             <a href="${params.dashboardUrl}" style="display: inline-block; padding: 10px 24px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">View in Dashboard →</a>
           </div>
           <div style="padding: 16px 24px; border-top: 1px solid #1e293b; text-align: center;">
-            <p style="margin: 0; color: #64748b; font-size: 12px;">Swifter AI Platform • Automated Alert</p>
+            <p style="margin: 0; color: #64748b; font-size: 12px;">AI Platform Platform • Automated Alert</p>
           </div>
         </div>
       `,
@@ -109,7 +109,7 @@ export const EmailTemplates = {
             </div>
           </div>
           <div style="padding: 16px 24px; border-top: 1px solid #1e293b; text-align: center;">
-            <p style="margin: 0; color: #64748b; font-size: 12px;">Swifter AI Platform • Automated Report</p>
+            <p style="margin: 0; color: #64748b; font-size: 12px;">AI Platform Platform • Automated Report</p>
           </div>
         </div>
       `,
@@ -120,7 +120,7 @@ export const EmailTemplates = {
   welcomeEmail(params: { name: string; organizationName: string; loginUrl: string }): EmailMessage {
     return {
       to: [],
-      subject: `Welcome to Swifter AI Platform — ${params.organizationName}`,
+      subject: `Welcome to AI Platform Platform — ${params.organizationName}`,
       html: `
         <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; border-radius: 12px; overflow: hidden;">
           <div style="padding: 32px 24px; text-align: center; background: linear-gradient(135deg, #3b82f622, #8b5cf622);">
@@ -215,7 +215,7 @@ export async function sendAgentDeployedEmail(
           </table>
         </div>
         <div style="padding: 16px 24px; border-top: 1px solid #1e293b; text-align: center;">
-          <p style="margin: 0; color: #64748b; font-size: 12px;">Swifter AI Platform • Deployment Notification</p>
+          <p style="margin: 0; color: #64748b; font-size: 12px;">AI Platform Platform • Deployment Notification</p>
         </div>
       </div>
     `,
@@ -249,7 +249,7 @@ export async function sendApprovalRequestEmail(
           <a href="${approvalUrl}" style="display: inline-block; margin-top: 16px; padding: 10px 24px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">Review Request →</a>
         </div>
         <div style="padding: 16px 24px; border-top: 1px solid #1e293b; text-align: center;">
-          <p style="margin: 0; color: #64748b; font-size: 12px;">Swifter AI Platform • Approval Workflow</p>
+          <p style="margin: 0; color: #64748b; font-size: 12px;">AI Platform Platform • Approval Workflow</p>
         </div>
       </div>
     `,
@@ -286,7 +286,7 @@ export async function sendApprovalDecisionEmail(
           ${notes ? `<div style="margin-top: 16px; padding: 12px 16px; background: #1e293b; border-radius: 8px; border-left: 3px solid ${color};"><p style="margin: 0; color: #94a3b8; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Notes</p><p style="margin: 0; color: #cbd5e1; font-size: 13px;">${notes}</p></div>` : ""}
         </div>
         <div style="padding: 16px 24px; border-top: 1px solid #1e293b; text-align: center;">
-          <p style="margin: 0; color: #64748b; font-size: 12px;">Swifter AI Platform • Approval Workflow</p>
+          <p style="margin: 0; color: #64748b; font-size: 12px;">AI Platform Platform • Approval Workflow</p>
         </div>
       </div>
     `,
@@ -332,7 +332,7 @@ export async function sendMarketEnabledEmail(
           </p>
         </div>
         <div style="padding: 16px 24px; border-top: 1px solid #1e293b; text-align: center;">
-          <p style="margin: 0; color: #64748b; font-size: 12px;">Swifter AI Platform • Market Notification</p>
+          <p style="margin: 0; color: #64748b; font-size: 12px;">AI Platform Platform • Market Notification</p>
         </div>
       </div>
     `,

@@ -193,7 +193,7 @@ export default function DashboardLayout({
           <Link href="/" className="flex items-center gap-3 no-underline">
             <Image
               src={whiteLabelConfig?.theme?.logoUrl || "/logo-3d.png"}
-              alt={whiteLabelConfig?.loginPage?.headline ?? "Swifter AI"}
+              alt={whiteLabelConfig?.loginPage?.headline ?? "AI Platform"}
               width={36}
               height={36}
               className="rounded-xl object-contain"
@@ -201,7 +201,7 @@ export default function DashboardLayout({
             />
             <div>
               <div className="text-sm font-bold text-text-primary tracking-tight">
-                {whiteLabelConfig?.loginPage?.headline ?? tenant?.name ?? "Swifter AI"}
+                {whiteLabelConfig?.loginPage?.headline ?? tenant?.name ?? "AI Platform"}
               </div>
               <div className="text-[10px] text-text-muted font-medium uppercase tracking-widest">
                 {whiteLabelConfig?.loginPage?.subheadline ?? "Platform"}

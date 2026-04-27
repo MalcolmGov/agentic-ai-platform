@@ -242,8 +242,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-navy-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/logo-3d.png" alt="Swifter AI" width={36} height={36} className="rounded-xl" />
-            <span className="font-bold text-text-primary text-lg">Swifter AI</span>
+            <Image src="/logo-3d.png" alt="AI Platform" width={36} height={36} className="rounded-xl" />
+            <span className="font-bold text-text-primary text-lg">AI Platform</span>
           </div>
           <div className="hidden lg:flex items-center gap-8 text-sm text-text-secondary">
             <a href="#capabilities" className="hover:text-text-primary transition-colors">Capabilities</a>
@@ -329,7 +329,7 @@ export default function LandingPage() {
               <div className="relative" style={{ animation: 'float 8s ease-in-out infinite' }}>
                 <Image
                   src="/hero-swifter-ai.png"
-                  alt="Swifter AI Platform — Enterprise Agent Orchestration Dashboard"
+                  alt="AI Platform Platform — Enterprise Agent Orchestration Dashboard"
                   width={700}
                   height={700}
                   className="w-full"
@@ -602,8 +602,8 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Image src="/logo-3d.png" alt="Swifter AI" width={28} height={28} className="rounded-lg" />
-                <span className="font-bold text-text-primary">Swifter AI</span>
+                <Image src="/logo-3d.png" alt="AI Platform" width={28} height={28} className="rounded-lg" />
+                <span className="font-bold text-text-primary">AI Platform</span>
               </div>
               <p className="text-sm text-text-muted leading-relaxed">The operating system for AI agents. Build, deploy, monitor, and optimize autonomous agents at enterprise scale.</p>
             </div>
@@ -639,7 +639,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-text-muted">© 2026 Swifter AI Platform. All rights reserved.</p>
+            <p className="text-sm text-text-muted">© 2026 AI Platform Platform. All rights reserved.</p>
             <div className="flex items-center gap-6 text-sm text-text-muted">
               <Link href="/dashboard" className="hover:text-electric-400 transition-colors">Dashboard</Link>
               <Link href="/privacy" className="hover:text-text-primary transition-colors">Privacy</Link>

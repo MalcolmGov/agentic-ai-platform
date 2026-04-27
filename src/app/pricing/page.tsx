@@ -77,7 +77,7 @@ const faqs = [
   },
   {
     q: "Can we deploy to our existing apps?",
-    a: "Yes. Swifter AI provides REST APIs, webhooks, and SDKs (JavaScript, Python) that integrate with any existing web or mobile application. Our Apps & Properties feature lets you register your domains and mobile apps, then attach agents to specific surfaces — chat widgets, API endpoints, or background jobs — without rebuilding your stack.",
+    a: "Yes. AI Platform provides REST APIs, webhooks, and SDKs (JavaScript, Python) that integrate with any existing web or mobile application. Our Apps & Properties feature lets you register your domains and mobile apps, then attach agents to specific surfaces — chat widgets, API endpoints, or background jobs — without rebuilding your stack.",
   },
   {
     q: "How does WhatsApp integration work?",
@@ -103,7 +103,7 @@ export default function PricingPage() {
                 <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 5.323V3a1 1 0 011-1z" />
               </svg>
             </div>
-            <span className="text-sm font-semibold text-white">Swifter AI</span>
+            <span className="text-sm font-semibold text-white">AI Platform</span>
           </a>
           <div className="flex items-center gap-4">
             <a href="/dashboard" className="text-sm text-white/60 hover:text-white transition-colors">Dashboard</a>
@@ -187,7 +187,7 @@ export default function PricingPage() {
                 </ul>
 
                 <a
-                  href={tier.name === "Enterprise" ? "mailto:sales@swifterai.io" : "/dashboard"}
+                  href={tier.name === "Enterprise" ? "mailto:sales@{{YOUR_DOMAIN}}" : "/dashboard"}
                   className={`w-full py-3.5 px-6 rounded-xl text-sm font-semibold text-center transition-all duration-200 ${
                     tier.popular
                       ? `bg-gradient-to-r ${tier.color} text-white hover:opacity-90 hover:shadow-[0_8px_24px_-8px_rgba(59,130,246,0.6)]`
@@ -281,7 +281,7 @@ export default function PricingPage() {
                 Start Free Trial
               </a>
               <a
-                href="mailto:sales@swifterai.io"
+                href="mailto:sales@{{YOUR_DOMAIN}}"
                 className="px-8 py-3.5 rounded-xl text-sm font-semibold border border-white/20 text-white hover:border-white/40 hover:bg-white/5 transition-all duration-200"
               >
                 Talk to Sales
@@ -300,13 +300,13 @@ export default function PricingPage() {
                 <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 5.323V3a1 1 0 011-1z" />
               </svg>
             </div>
-            <span className="text-xs text-white/40">© 2026 Swifter AI. All rights reserved.</span>
+            <span className="text-xs text-white/40">© 2026 AI Platform. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-white/40">
             <a href="#" className="hover:text-white/70 transition-colors">Privacy</a>
             <a href="#" className="hover:text-white/70 transition-colors">Terms</a>
             <a href="#" className="hover:text-white/70 transition-colors">Security</a>
-            <a href="mailto:support@swifterai.io" className="hover:text-white/70 transition-colors">Contact</a>
+            <a href="mailto:support@{{YOUR_DOMAIN}}" className="hover:text-white/70 transition-colors">Contact</a>
           </div>
         </div>
       </footer>

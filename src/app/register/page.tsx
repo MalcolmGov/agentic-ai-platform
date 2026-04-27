@@ -90,7 +90,7 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-text-primary">Request Access</h1>
-          <p className="text-text-secondary mt-1 text-sm">Your account will be provisioned by your Swifter AI administrator</p>
+          <p className="text-text-secondary mt-1 text-sm">Your account will be provisioned by your AI Platform administrator</p>
         </div>
 
         {/* Registration Form */}
